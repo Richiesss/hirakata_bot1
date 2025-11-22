@@ -1,0 +1,24 @@
+# LINE Bot SDK
+line-bot-sdk==3.6.0
+
+# Web Framework
+Flask==3.0.0
+
+# Database
+SQLAlchemy==2.0.23
+psycopg2-binary==2.9.9
+
+# AI/ML
+ollama==0.1.6
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# HTTP Client
+requests==2.31.0
+
+# Security
+bcrypt==4.1.2
+
+# Utilities
+python-dateutil==2.8.2
