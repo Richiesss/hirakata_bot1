@@ -32,6 +32,7 @@ from database.db_manager import init_db, get_db, get_or_create_user
 from handlers.message_handler import handle_text_message
 from handlers.follow_handler import handle_follow
 from handlers.postback_handler import handle_postback
+from web.survey_form import survey_bp
 
 # ログ設定
 logging.basicConfig(
@@ -42,6 +43,9 @@ logger = logging.getLogger(__name__)
 
 # Flaskアプリケーションの初期化
 app = Flask(__name__)
+
+# Webフォーム用blueprintを登録
+app.register_blueprint(survey_bp, url_prefix='/web')
 
 # LINE Bot APIの設定
 configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
@@ -141,7 +145,14 @@ def handle_message(event: MessageEvent):
                 line_bot_api.reply_message_with_http_info(
                     ReplyMessageRequest(
                         reply_token=event.reply_token,
-                        messages=[TextMessage(text="申し訳ございません。エラーが発生しました。しばらくしてから再度お試しください。")]
+                        messages=[TextMessage(text="""申し訳ございません。現在、対話機能でエラーが発生しています。
+
+代わりに「アンケート」と送信していただくと、Webフォームからご意見を送信できます。
+
+または、以下のコマンドをお試しください：
+📝 アンケート: 「アンケート」と入力
+💎 ポイント: /point
+❓ ヘルプ: /help""")]
                     )
                 )
         except:

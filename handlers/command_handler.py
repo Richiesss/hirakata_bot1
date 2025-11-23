@@ -1,83 +1,111 @@
-"""コマンドハンドラー
-
-/help, /reset, /point等のコマンドを処理
-"""
+"""コマンドハンドラー"""
 
 import logging
 from typing import List
 from linebot.v3.messaging import TextMessage
-
 from database.db_manager import get_db, get_or_create_user
-from features.chat_opinion import reset_chat_session
+import logging
+import os
 
 logger = logging.getLogger(__name__)
 
+def is_command(text: str) -> bool:
+    """テキストがコマンドかどうかを判定"""
+    return text.startswith('/') or text == 'アンケート'
 
-def is_command(message_text: str) -> bool:
-    """メッセージがコマンドかどうか判定"""
-    return message_text.startswith("/")
-
-
-def handle_command(user_id: str, command: str) -> List[TextMessage]:
-    """
-    コマンドを処理
+def handle_command(user_id: str, text: str) -> list:
+    """コマンドを処理
     
     Args:
         user_id: LINE User ID
-        command: コマンド文字列
-    
+        text: コマンドテキスト
+        
     Returns:
         応答メッセージのリスト
     """
-    command = command.lower().strip()
+    text = text.strip()
+    text_lower = text.lower()
     
-    if command == "/help":
+    if text == 'アンケート':
+        return handle_survey(user_id)
+    elif text_lower == '/help':
         return handle_help()
-    elif command == "/reset":
+    elif text_lower == '/reset':
         return handle_reset(user_id)
-    elif command == "/point":
+    elif text_lower == '/point':
         return handle_point(user_id)
     else:
-        return [TextMessage(text=f"不明なコマンドです: {command}\n/helpで利用可能なコマンドを確認できます。")]
+        return [TextMessage(text="不明なコマンドです。/help でコマンド一覧を確認できます。")]
 
 
-def handle_help() -> List[TextMessage]:
-    """ヘルプコマンド"""
+def handle_survey(user_id: str) -> list:
+    """アンケートURLを返す"""
+    # ngrok URLを環境変数または設定から取得
+    # 本番環境では固定URLを使用
+    base_url = os.getenv('PUBLIC_URL', 'https://longevous-cubbishly-helena.ngrok-free.dev')
+    survey_url = f"{base_url}/web/survey?user_id={user_id}"
+    
+    survey_text = f"""📝 アンケートフォーム
+
+以下のリンクからアンケートに回答できます：
+
+{survey_url}
+
+カテゴリを選択して、ご意見をお聞かせください。
+回答で5ポイント獲得できます！"""
+    
+    return [TextMessage(text=survey_text)]
+
+
+def handle_help() -> list:
+    """ヘルプメッセージを返す"""
     help_text = """【利用可能なコマンド】
 
-/help - このヘルプを表示
-/reset - 対話をリセット
-/point - 累積ポイントを確認
+💬 対話で意見を送る
+「意見を送りたい」と入力してください
 
-【使い方】
-メッセージを送信すると、AIが質問を返してあなたの意見を引き出します。
-対話が完了すると、意見が保存されポイントが付与されます。"""
+📝 アンケートで意見を送る
+「アンケート」と入力またはリッチメニューから
+
+💎 ポイント確認
+/point
+
+🔄 対話をリセット
+/reset
+
+❓ ヘルプ
+/help
+
+ご意見をお待ちしています！"""
     
     return [TextMessage(text=help_text)]
 
 
-def handle_reset(user_id: str) -> List[TextMessage]:
-    """リセットコマンド"""
-    try:
-        reset_chat_session(user_id)
-        return [TextMessage(text="対話履歴をリセットしました。新しい話題をお聞かせください。")]
-    except Exception as e:
-        logger.error(f"Error in handle_reset: {e}")
-        return [TextMessage(text="リセット処理でエラーが発生しました。")]
+def handle_reset(user_id: str) -> list:
+    """対話履歴をリセット"""
+    from features.chat_opinion import reset_chat_session
+    
+    reset_chat_session(user_id)
+    
+    return [TextMessage(text="対話履歴をリセットしました。新しい意見を送信できます。")]
 
 
-def handle_point(user_id: str) -> List[TextMessage]:
-    """ポイント確認コマンド"""
+def handle_point(user_id: str) -> list:
+    """ポイント残高を表示"""
     try:
         with get_db() as db:
             user = get_or_create_user(db, user_id)
             
-            point_text = f"""【あなたのポイント】
+            point_text = f"""💎 あなたのポイント
 
-累積ポイント: {user.total_points} pt
+総ポイント: {user.total_points} ポイント
 
-ご協力ありがとうございます！
-引き続き市政へのご意見をお聞かせください。"""
+【ポイントの貯め方】
+・対話で意見: 10ポイント
+・アンケート: 5ポイント
+・投票: 3ポイント
+
+引き続きご意見をお待ちしています！"""
             
             return [TextMessage(text=point_text)]
     except Exception as e:

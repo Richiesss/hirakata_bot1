@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>枚方市民ニーズアンケート</title>
+    <link rel="stylesheet" href="{{ url_for('survey_bp.static', filename='css/survey.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>枚方市民ニーズアンケート</h1>
+            <p class="subtitle">ご意見をお聞かせください</p>
+        </header>
+
+        <form id="surveyForm" action="{{ url_for('survey_bp.submit_survey') }}" method="POST">
+            <!-- CSRF Token -->
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="user_id" value="{{ user_id }}">
+
+            <!-- カテゴリ選択 -->
+            <div class="form-group">
+                <label for="category">カテゴリを選択<span class="required">*</span></label>
+                <select id="category" name="category" required>
+                    <option value="">選択してください</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}">{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- 意見入力 -->
+            <div class="form-group">
+                <label for="opinion">ご意見をお聞かせください<span class="required">*</span></label>
+                <textarea id="opinion" name="opinion" rows="6" maxlength="1000"
+                    placeholder="枚方市へのご意見・ご要望を自由にご記入ください（1000文字以内）" required></textarea>
+                <div class="char-count">
+                    <span id="charCount">0</span> / 1000 文字
+                </div>
+            </div>
+
+            <!-- 送信ボタン -->
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">送信する</button>
+            </div>
+
+            <!-- ポイント案内 -->
+            <div class="point-info">
+                <p>💎 送信完了で <strong>5ポイント</strong> 獲得！</p>
+            </div>
+        </form>
+    </div>
+
+    <script src="{{ url_for('survey_bp.static', filename='js/survey.js') }}"></script>
+</body>
+
+</html>
