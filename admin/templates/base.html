@@ -26,6 +26,9 @@
             <li><a href="{{ url_for('polls') }}" class="{% if request.endpoint == 'polls' %}active{% endif %}">
                     📋 投票管理
                 </a></li>
+            <li><a href="{{ url_for('analysis') }}" class="{% if request.endpoint == 'analysis' %}active{% endif %}">
+                    🤖 AI分析
+                </a></li>
             <li><a href="{{ url_for('stats') }}" class="{% if request.endpoint == 'stats' %}active{% endif %}">
                     📈 統計・分析
                 </a></li>

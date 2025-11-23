@@ -16,6 +16,17 @@ ollama==0.1.6
 pandas==2.2.3
 plotly==6.5.0
 
+# AI Analysis
+torch
+transformers
+scikit-learn
+fugashi
+ipadic
+matplotlib
+seaborn
+protobuf
+unidic-lite
+
 # Environment Variables
 python-dotenv==1.0.0
 
