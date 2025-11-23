@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}統計・分析{% endblock %}
+
+{% block content %}
+<div class="stats-page">
+    <h1>統計・分析</h1>
+
+    <div class="stats-grid">
+        <!-- カテゴリ別統計 -->
+        <div class="stats-card">
+            <h2>カテゴリ別統計</h2>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>カテゴリ</th>
+                        <th>件数</th>
+                        <th>平均感情スコア</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat in category_data %}
+                    <tr>
+                        <td>{{ cat.category or 'その他' }}</td>
+                        <td>{{ cat.count }}件</td>
+                        <td>{{ "%.1f"|format(cat.avg_emotion) if cat.avg_emotion else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 月別推移 -->
+        <div class="stats-card">
+            <h2>月別推移</h2>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>月</th>
+                        <th>件数</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for month in monthly_data %}
+                    <tr>
+                        <td>{{ month.month }}</td>
+                        <td>{{ month.count }}件</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

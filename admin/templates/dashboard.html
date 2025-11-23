@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}ダッシュボード{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h1>ダッシュボード</h1>
+
+    <!-- サマリーカード -->
+    <div class="summary-cards">
+        <div class="card" class="card-primary">
+            <h3>総意見数</h3>
+            <p class="big-number">{{ total_opinions }}</p>
+            <p class="sub-text">件</p>
+        </div>
+
+        <div class="card card-success">
+            <h3>本日の意見</h3>
+            <p class="big-number">{{ today_opinions }}</p>
+            <p class="sub-text">件</p>
+        </div>
+
+        <div class="card card-info">
+            <h3>登録ユーザー</h3>
+            <p class="big-number">{{ total_users }}</p>
+            <p class="sub-text">人</p>
+        </div>
+
+        <div class="card card-warning">
+            <h3>完了セッション</h3>
+            <p class="big-number">{{ total_sessions }}</p>
+            <p class="sub-text">件</p>
+        </div>
+    </div>
+
+    <!-- グラフエリア -->
+    <div class="charts-row">
+        <div class="chart-container">
+            <h2>カテゴリ別分布</h2>
+            <div class="category-chart">
+                {% for cat in category_stats %}
+                <div class="category-item">
+                    <span class="category-label">{{ cat.category or 'その他' }}</span>
+                    <div class="category-bar-container">
+                        <div class="category-bar"
+                            style="width: {{ (cat.count / total_opinions * 100) if total_opinions > 0 else 0 }}%"></div>
+                    </div>
+                    <span class="category-count">{{ cat.count }}件</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h2>ソース別分布</h2>
+            <div class="source-chart">
+                {% for src in source_stats %}
+                <div class="source-item">
+                    <span class="source-label">
+                        {% if src.source_type == 'chat' %}💬 対話型
+                        {% elif src.source_type == 'free_form' %}📝 自由記述
+                        {% elif src.source_type == 'poll' %}📊 選択式
+                        {% else %}{{ src.source_type }}
+                        {% endif %}
+                    </span>
+                    <span class="source-count">{{ src.count }}件 ({{ "%.1f"|format((src.count / total_opinions * 100) if
+                        total_opinions > 0 else 0) }}%)</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 日別推移 -->
+    <div class="chart-container full-width">
+        <h2>過去7日間の推移</h2>
+        <div class="daily-chart">
+            {% for day in daily_stats %}
+            <div class="daily-item">
+                <span class="daily-label">{{ day.date }}</span>
+                <div class="daily-bar-container">
+                    <div class="daily-bar"
+                        style="height: {{ (day.count / ([d.count for d in daily_stats]|max) * 100) if daily_stats else 0 }}%">
+                        <span class="daily-count">{{ day.count }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 最近の意見 -->
+    <div class="recent-opinions">
+        <h2>最近の意見</h2>
+        <table class="opinions-table">
+            <thead>
+                <tr>
+                    <th>日時</th>
+                    <th>カテゴリ</th>
+                    <th>内容</th>
+                    <th>ソース</th>
+                    <th>感情</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for op in recent_opinions %}
+                <tr>
+                    <td>{{ op.created_at.strftime('%m/%d %H:%M') }}</td>
+                    <td><span class="badge">{{ op.category or 'その他' }}</span></td>
+                    <td class="opinion-content">{{ op.content[:60] }}{% if op.content|length > 60 %}...{% endif %}</td>
+                    <td>
+                        {% if op.source_type == 'chat' %}💬
+                        {% elif op.source_type == 'free_form' %}📝
+                        {% elif op.source_type == 'poll' %}📊
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="emotion-score score-{{ (op.emotion_score // 3) if op.emotion_score else 0 }}">
+                            {{ op.emotion_score if op.emotion_score else '-' }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

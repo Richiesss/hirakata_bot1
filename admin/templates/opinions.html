@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}意見一覧{% endblock %}
+
+{% block content %}
+<div class="opinions-page">
+    <h1>意見一覧</h1>
+
+    <!-- フィルター -->
+    <div class="filters">
+        <form method="GET" action="{{ url_for('opinions') }}">
+            <select name="category" onchange="this.form.submit()">
+                <option value="">全カテゴリ</option>
+                {% for cat in categories %}
+                <option value="{{ cat }}" {% if cat==current_category %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="source" onchange="this.form.submit()">
+                <option value="">全ソース</option>
+                <option value="chat" {% if current_source=='chat' %}selected{% endif %}>💬 対話型</option>
+                <option value="free_form" {% if current_source=='free_form' %}selected{% endif %}>📝 自由記述</option>
+                <option value="poll" {% if current_source=='poll' %}selected{% endif %}>📊 選択式</option>
+            </select>
+        </form>
+    </div>
+
+    <!-- 意見テーブル -->
+    <table class="opinions-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>日時</th>
+                <th>カテゴリ</th>
+                <th>内容</th>
+                <th>ソース</th>
+                <th>感情スコア</th>
+                <th>優先度</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for op in opinions %}
+            <tr>
+                <td>{{ op.id }}</td>
+                <td>{{ op.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td><span class="badge">{{ op.category or 'その他' }}</span></td>
+                <td class="opinion-content">{{ op.content }}</td>
+                <td>
+                    {% if op.source_type == 'chat' %}💬 対話
+                    {% elif op.source_type == 'free_form' %}📝 記述
+                    {% elif op.source_type == 'poll' %}📊 投票
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="emotion-score score-{{ (op.emotion_score // 3) if op.emotion_score else 0 }}">
+                        {{ op.emotion_score if op.emotion_score else '-' }}
+                    </span>
+                </td>
+                <td>
+                    {% if op.priority_score %}
+                    {{ "%.2f"|format(op.priority_score) }}
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- ページネーション -->
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="{{ url_for('opinions', page=page-1, category=current_category, source=current_source) }}">&laquo;
+            前へ</a>
+        {% endif %}
+
+        <span>{{ page }} / {{ (total // per_page) + 1 }}</span>
+
+        {% if page * per_page < total %} <a
+            href="{{ url_for('opinions', page=page+1, category=current_category, source=current_source) }}">次へ
+            &raquo;</a>
+            {% endif %}
+    </div>
+</div>
+{% endblock %}

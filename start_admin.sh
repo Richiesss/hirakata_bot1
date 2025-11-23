@@ -1,12 +1,12 @@
 #!/bin/bash
-# LINE Bot 起動スクリプト
+# 管理画面 起動スクリプト
 
 set -e  # エラー時に停止
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-echo "=== LINE Bot 起動 ==="
+echo "=== 管理画面 起動 ==="
 
 # 仮想環境の確認と有効化
 if [ ! -d "venv" ]; then
@@ -29,15 +29,15 @@ if [ ! -f "hirakata_bot.db" ]; then
 fi
 
 # 既存プロセスの確認と停止
-if pgrep -f "python.*app.py" > /dev/null; then
-    echo "既存のLINE Botプロセスを停止中..."
-    pkill -f "python.*app.py" || true
+if pgrep -f "python.*admin_app.py" > /dev/null; then
+    echo "既存の管理画面プロセスを停止中..."
+    pkill -f "python.*admin_app.py" || true
     sleep 2
 fi
 
-# LINE Bot起動
-echo "LINE Botを起動中..."
+# 管理画面起動
+echo "管理画面を起動中..."
 export PYTHONPATH="${SCRIPT_DIR}:${PYTHONPATH}"
-python app.py
+python admin/admin_app.py
 
-echo "LINE Bot起動完了"
+echo "管理画面起動完了"

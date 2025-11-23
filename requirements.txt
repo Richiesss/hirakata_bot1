@@ -3,6 +3,7 @@ line-bot-sdk==3.6.0
 
 # Web Framework
 Flask==3.0.0
+Flask-Login==0.6.3
 
 # Database
 SQLAlchemy==2.0.23
@@ -10,6 +11,10 @@ psycopg2-binary==2.9.9
 
 # AI/ML
 ollama==0.1.6
+
+# Data & Visualization
+pandas==2.2.3
+plotly==6.5.0
 
 # Environment Variables
 python-dotenv==1.0.0
