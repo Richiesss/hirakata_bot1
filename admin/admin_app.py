@@ -5,6 +5,7 @@ Flaskベースの管理画面アプリケーション
 
 from flask import Flask, render_template, redirect, url_for, request, flash, send_file
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from sqlalchemy import func
 import os
 from datetime import datetime, timedelta
 import pandas as pd
@@ -28,11 +29,21 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+# セッションをアプリケーションレベルで管理
+from database.db_manager import SessionLocal
+
 @login_manager.user_loader
 def load_user(user_id):
     """ユーザーローダー"""
-    with get_db() as db:
-        return db.query(AdminUser).filter(AdminUser.id == int(user_id)).first()
+    db = SessionLocal()
+    try:
+        user = db.query(AdminUser).filter(AdminUser.id == int(user_id)).first()
+        if user:
+            # セッションから切り離して返す（expunge）
+            db.expunge(user)
+        return user
+    finally:
+        db.close()
 
 
 @app.route('/admin/login', methods=['GET', 'POST'])
@@ -84,13 +95,13 @@ def dashboard():
         # カテゴリ別集計
         category_stats = db.query(
             Opinion.category,
-            db.func.count(Opinion.id).label('count')
+            func.count(Opinion.id).label('count')
         ).group_by(Opinion.category).all()
         
         # ソース別集計
         source_stats = db.query(
             Opinion.source_type,
-            db.func.count(Opinion.id).label('count')
+            func.count(Opinion.id).label('count')
         ).group_by(Opinion.source_type).all()
         
         # 最近の意見
@@ -101,11 +112,14 @@ def dashboard():
         # 日別推移（過去7日間）
         seven_days_ago = datetime.utcnow() - timedelta(days=7)
         daily_stats = db.query(
-            db.func.date(Opinion.created_at).label('date'),
-            db.func.count(Opinion.id).label('count')
+            func.date(Opinion.created_at).label('date'),
+            func.count(Opinion.id).label('count')
         ).filter(
             Opinion.created_at >= seven_days_ago
-        ).group_by(db.func.date(Opinion.created_at)).all()
+        ).group_by(func.date(Opinion.created_at)).all()
+        
+        # daily_statsの最大値を計算
+        daily_stats_max = max([d.count for d in daily_stats]) if daily_stats else 1
         
         return render_template('dashboard.html',
             total_opinions=total_opinions,
@@ -115,7 +129,8 @@ def dashboard():
             category_stats=category_stats,
             source_stats=source_stats,
             recent_opinions=recent_opinions,
-            daily_stats=daily_stats
+            daily_stats=daily_stats,
+            daily_stats_max=daily_stats_max
         )
 
 
@@ -201,20 +216,115 @@ def stats():
         # カテゴリ別集計
         category_data = db.query(
             Opinion.category,
-            db.func.count(Opinion.id).label('count'),
-            db.func.avg(Opinion.emotion_score).label('avg_emotion')
+            func.count(Opinion.id).label('count'),
+            func.avg(Opinion.emotion_score).label('avg_emotion')
         ).group_by(Opinion.category).all()
         
         # 月別推移
         monthly_data = db.query(
-            db.func.strftime('%Y-%m', Opinion.created_at).label('month'),
-            db.func.count(Opinion.id).label('count')
-        ).group_by(db.func.strftime('%Y-%m', Opinion.created_at)).all()
+            func.strftime('%Y-%m', Opinion.created_at).label('month'),
+            func.count(Opinion.id).label('count')
+        ).group_by(func.strftime('%Y-%m', Opinion.created_at)).all()
         
         return render_template('stats.html',
             category_data=category_data,
             monthly_data=monthly_data
         )
+
+
+@app.route('/admin/polls')
+@login_required
+def polls():
+    """投票一覧画面"""
+    from database.db_manager import Poll, PollResponse
+    
+    with get_db() as db:
+        polls_list = db.query(Poll).order_by(Poll.created_at.desc()).all()
+        
+        # 各投票の回答数を集計
+        for poll in polls_list:
+            poll.response_count = db.query(PollResponse).filter(
+                PollResponse.poll_id == poll.id
+            ).count()
+        
+        return render_template('polls.html', polls=polls_list)
+
+
+@app.route('/admin/polls/create', methods=['POST'])
+@login_required
+def create_poll():
+    """投票作成"""
+    from features.poll_manager import create_poll as create_poll_func
+    
+    question = request.form.get('question')
+    choices = [
+        request.form.get('choice_1'),
+        request.form.get('choice_2'),
+        request.form.get('choice_3'),
+        request.form.get('choice_4')
+    ]
+    description = request.form.get('description')
+    
+    try:
+        poll_id = create_poll_func(question, choices, description)
+        flash(f'投票を作成しました（ID: {poll_id}）', 'success')
+    except Exception as e:
+        flash(f'エラーが発生しました: {str(e)}', 'error')
+    
+    return redirect(url_for('polls'))
+
+
+@app.route('/admin/polls/<int:poll_id>/send')
+@login_required
+def send_poll(poll_id):
+    """投票配信（公開）"""
+    from features.poll_manager import send_poll_to_users
+    from database.db_manager import Poll
+    from datetime import datetime
+    
+    try:
+        # 投票を配信
+        result = send_poll_to_users(poll_id)
+        
+        msg = f'投票を配信・公開しました。（成功: {result["success"]}件, 失敗: {result["failed"]}件）'
+        if result["success"] == 0:
+            msg += ' ※プッシュ通知を送るには、ユーザーが一度ボットにメッセージを送る必要があります。'
+            
+        flash(msg, 'success')
+                
+    except Exception as e:
+        flash(f'エラーが発生しました: {str(e)}', 'error')
+    
+    return redirect(url_for('polls'))
+
+
+@app.route('/admin/polls/<int:poll_id>/results')
+@login_required
+def poll_results(poll_id):
+    """投票結果表示"""
+    from features.poll_manager import get_poll_results
+    
+    try:
+        results = get_poll_results(poll_id)
+        return render_template('poll_results.html', results=results)
+    except Exception as e:
+        flash(f'エラーが発生しました: {str(e)}', 'error')
+        return redirect(url_for('polls'))
+
+
+@app.route('/admin/polls/<int:poll_id>/close')
+@login_required  
+def close_poll(poll_id):
+    """投票締切"""
+    from features.poll_manager import close_poll as close_poll_func
+    
+    try:
+        close_poll_func(poll_id)
+        flash('投票を締め切りました', 'success')
+    except Exception as e:
+        flash(f'エラーが発生しました: {str(e)}', 'error')
+    
+    return redirect(url_for('polls'))
 
 
 if __name__ == '__main__':

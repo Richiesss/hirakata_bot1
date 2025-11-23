@@ -80,7 +80,7 @@
                 <span class="daily-label">{{ day.date }}</span>
                 <div class="daily-bar-container">
                     <div class="daily-bar"
-                        style="height: {{ (day.count / ([d.count for d in daily_stats]|max) * 100) if daily_stats else 0 }}%">
+                        style="height: {{ (day.count / daily_stats_max * 100) if daily_stats else 0 }}%">
                         <span class="daily-count">{{ day.count }}</span>
                     </div>
                 </div>

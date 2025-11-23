@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 def is_command(text: str) -> bool:
     """テキストがコマンドかどうかを判定"""
-    return text.startswith('/') or text == 'アンケート'
+    return text.startswith('/') or text in ['アンケート', '投票']
 
 def handle_command(user_id: str, text: str) -> list:
     """コマンドを処理
@@ -28,6 +28,8 @@ def handle_command(user_id: str, text: str) -> list:
     
     if text == 'アンケート':
         return handle_survey(user_id)
+    elif text == '投票':
+        return handle_poll(user_id)
     elif text_lower == '/help':
         return handle_help()
     elif text_lower == '/reset':
@@ -57,6 +59,28 @@ def handle_survey(user_id: str) -> list:
     return [TextMessage(text=survey_text)]
 
 
+def handle_poll(user_id: str) -> list:
+    """最新の投票を表示"""
+    from database.db_manager import get_db, Poll
+    from features.poll_manager import get_poll_flex_message
+    
+    with get_db() as db:
+        # 公開中の投票を取得
+        poll = db.query(Poll).filter(
+            Poll.status == 'published'
+        ).order_by(Poll.created_at.desc()).first()
+        
+        if not poll:
+            return [TextMessage(text="現在、公開中の投票はありません。")]
+        
+        try:
+            flex_message = get_poll_flex_message(poll.id)
+            return [flex_message]
+        except Exception as e:
+            logger.error(f"Error creating flex message: {e}")
+            return [TextMessage(text="エラーが発生しました。")]
+
+
 def handle_help() -> list:
     """ヘルプメッセージを返す"""
     help_text = """【利用可能なコマンド】
@@ -66,6 +90,9 @@ def handle_help() -> list:
 
 📝 アンケートで意見を送る
 「アンケート」と入力またはリッチメニューから
+
+📊 投票に参加
+「投票」と入力
 
 💎 ポイント確認
 /point

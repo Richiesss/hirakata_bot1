@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}投票管理 - 枚方市民ニーズ抽出システム{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header-section">
+        <h1>📊 投票管理</h1>
+        <button onclick="showCreateModal()" class="btn-primary">新規投票作成</button>
+    </div>
+
+    <!-- 投票一覧 -->
+    <div class="card">
+        <h2>投票一覧</h2>
+
+        {% if polls %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>質問</th>
+                    <th>ステータス</th>
+                    <th>回答数</th>
+                    <th>作成日時</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for poll in polls %}
+                <tr>
+                    <td>{{ poll.id }}</td>
+                    <td>{{ poll.title[:50] }}...</td>
+                    <td>
+                        <span class="badge badge-{{ poll.status }}">
+                            {{ poll.status }}
+                        </span>
+                    </td>
+                    <td>{{ poll.response_count }}件</td>
+                    <td>{{ poll.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td class="actions">
+                        {% if poll.status == 'draft' %}
+                        <a href="{{ url_for('send_poll', poll_id=poll.id) }}"
+                            class="btn-small btn-success" onclick="return confirm('この投票を配信しますか？')">配信</a>
+                        {% endif %}
+                        <a href="{{ url_for('poll_results', poll_id=poll.id) }}"
+                            class="btn-small">結果</a>
+                        {% if poll.status == 'published' %}
+                        <a href="{{ url_for('close_poll', poll_id=poll.id) }}"
+                            class="btn-small btn-danger" onclick="return confirm('この投票を締め切りますか？')">締切</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="no-data">投票がありません。新規作成してください。</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 新規作成モーダル -->
+<div id="createModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="hideCreateModal()">&times;</span>
+        <h2>新規投票作成</h2>
+
+        <form method="POST" action="{{ url_for('create_poll') }}">
+            <div class="form-group">
+                <label for="question">質問 <span class="required">*</span></label>
+                <input type="text" id="question" name="question" required maxlength="200"
+                    placeholder="例: 駅前の開発について、どう思いますか？">
+            </div>
+
+            <div class="form-group">
+                <label>選択肢（4つ必須） <span class="required">*</span></label>
+                <input type="text" name="choice_1" required placeholder="1. ">
+                <input type="text" name="choice_2" required placeholder="2. ">
+                <input type="text" name="choice_3" required placeholder="3. ">
+                <input type="text" name="choice_4" required placeholder="4. ">
+            </div>
+
+            <div class="form-group">
+                <label for="description">説明（オプション）</label>
+                <textarea id="description" name="description" rows="3" placeholder="追加の説明があれば記入してください"></textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" onclick="hideCreateModal()" class="btn-secondary">キャンセル</button>
+                <button type="submit" class="btn-primary">作成</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .badge {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .badge-draft {
+        background: #95a5a6;
+        color: white;
+    }
+
+    .badge-published {
+        background: #27ae60;
+        color: white;
+    }
+
+    .badge-closed {
+        background: #e74c3c;
+        color: white;
+    }
+
+    .btn-small {
+        padding: 6px 12px;
+        font-size: 14px;
+        margin: 0 4px;
+    }
+
+    .btn-success {
+        background: #27ae60;
+    }
+
+    .btn-success:hover {
+        background: #229954;
+    }
+
+    .btn-danger {
+        background: #e74c3c;
+    }
+
+    .btn-danger:hover {
+        background: #c0392b;
+    }
+
+    .actions {
+        white-space: nowrap;
+    }
+
+    .no-data {
+        text-align: center;
+        padding: 40px;
+        color: #7f8c8d;
+    }
+
+    /* モーダル */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+        background: white;
+        margin: 5% auto;
+        padding: 30px;
+        border-radius: 8px;
+        max-width: 600px;
+        position: relative;
+    }
+
+    .close {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .close:hover {
+        color: #e74c3c;
+    }
+
+    .form-group input[type="text"],
+    .form-group textarea {
+        width: 100%;
+        padding: 10px;
+        margin: 8px 0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 24px;
+    }
+
+    .required {
+        color: #e74c3c;
+    }
+</style>
+
+<script>
+    function showCreateModal() {
+        document.getElementById('createModal').style.display = 'block';
+    }
+
+    function hideCreateModal() {
+        document.getElementById('createModal').style.display = 'none';
+    }
+
+    // モーダル外クリックで閉じる
+    window.onclick = function (event) {
+        const modal = document.getElementById('createModal');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}投票結果 - {{ results.title }}{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="header-actions">
+        <h1>投票結果: {{ results.title }}</h1>
+        <a href="{{ url_for('polls') }}" class="btn btn-secondary">一覧に戻る</a>
+    </div>
+
+    <div class="card">
+        <div class="poll-meta">
+            <p><strong>総投票数:</strong> {{ results.total_responses }}件</p>
+        </div>
+
+        <div class="poll-results-chart">
+            {% for option in results.options %}
+            <div class="result-item">
+                <div class="result-label">
+                    <span class="option-number">{{ loop.index }}.</span>
+                    <span class="option-text">{{ option.option_text }}</span>
+                </div>
+                <div class="result-bar-container">
+                    <div class="result-bar" style="width: {{ option.percentage }}%"></div>
+                    <span class="result-count">{{ option.count }}票 ({{ option.percentage }}%)</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .poll-meta {
+        margin-bottom: 20px;
+        font-size: 1.1em;
+    }
+
+    .result-item {
+        margin-bottom: 15px;
+    }
+
+    .result-label {
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+
+    .option-number {
+        display: inline-block;
+        width: 20px;
+        color: #666;
+    }
+
+    .result-bar-container {
+        display: flex;
+        align-items: center;
+        height: 24px;
+    }
+
+    .result-bar {
+        height: 100%;
+        background-color: #4a90e2;
+        border-radius: 4px;
+        transition: width 0.5s ease;
+    }
+
+    .result-count {
+        margin-left: 10px;
+        font-size: 0.9em;
+        color: #666;
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}

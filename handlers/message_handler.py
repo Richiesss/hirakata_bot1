@@ -28,5 +28,12 @@ def handle_text_message(user_id: str, message_text: str) -> List[TextMessage]:
     if is_command(message_text):
         return handle_command(user_id, message_text)
     
+    # 数字入力（1-4）の場合は投票として処理
+    if message_text.strip() in ['1', '2', '3', '4', '１', '２', '３', '４']:
+        from features.poll_handler import handle_text_poll_response
+        poll_response = handle_text_poll_response(user_id, message_text.strip())
+        if poll_response:
+            return poll_response
+    
     # 通常メッセージ → 対話モードへ
     return handle_chat_message(user_id, message_text)

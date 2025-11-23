@@ -41,6 +41,8 @@ def handle_follow(user_id: str) -> List[TextMessage]:
 いただいたご意見は市政改善に活用されます。
 ご協力いただくとポイントが貯まります！
 
+※友だち追加により、アンケートや投票の通知が届くようになります。
+
 まずは、あなたの困りごとや要望を自由にお話しください。"""
         
         return [TextMessage(text=welcome_text)]

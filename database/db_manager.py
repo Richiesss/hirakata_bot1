@@ -32,6 +32,7 @@ class User(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     line_user_id_hash = Column(String(255), unique=True, nullable=False)
+    line_user_id = Column(String(255))  # プッシュ通知用に追加
     display_name = Column(String(255))
     age_range = Column(String(20))
     district = Column(String(100))
@@ -174,6 +175,18 @@ class AdminUser(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login_at = Column(DateTime)
+    
+    # Flask-Loginに必要なメソッド
+    def get_id(self):
+        return str(self.id)
+    
+    @property
+    def is_authenticated(self):
+        return True
+    
+    @property
+    def is_anonymous(self):
+        return False
 
 
 # ユーティリティ関数
@@ -211,11 +224,17 @@ def get_or_create_user(db, line_user_id: str, display_name: str = None):
     if not user:
         user = User(
             line_user_id_hash=user_hash,
+            line_user_id=line_user_id,  # 生IDも保存
             display_name=display_name
         )
         db.add(user)
         db.commit()
         db.refresh(user)
+    else:
+        # 既存ユーザーの場合、line_user_idがなければ更新
+        if not user.line_user_id:
+            user.line_user_id = line_user_id
+            db.commit()
     
     return user
 
