@@ -43,5 +43,20 @@ def handle_postback(user_id: str, postback_data: str) -> List[TextMessage]:
             logger.error(f"Error handling poll postback: {e}", exc_info=True)
             return [TextMessage(text="エラーが発生しました。")]
     
+    # ユーザー登録アクション
+    elif postback_data == 'action=register':
+        from database.db_manager import get_db, get_or_create_user
+        
+        try:
+            with get_db() as db:
+                user = get_or_create_user(db, user_id)
+                logger.info(f"User manually registered via postback: {user.id}")
+                
+            return [TextMessage(text="✅ 登録が完了しました！\n\nこれでアンケートや投票の通知を受け取れるようになりました。\n\n引き続き、ご意見やご要望があればいつでもメッセージを送ってください。")]
+            
+        except Exception as e:
+            logger.error(f"Error handling register postback: {e}", exc_info=True)
+            return [TextMessage(text="登録処理中にエラーが発生しました。")]
+
     # その他のポストバック
     return [TextMessage(text="この機能は準備中です。")]
