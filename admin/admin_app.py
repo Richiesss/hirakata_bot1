@@ -286,7 +286,7 @@ def send_poll(poll_id):
         # 投票を配信
         result = send_poll_to_users(poll_id)
         
-        msg = f'投票を配信・公開しました。（成功: {result["success"]}件, 失敗: {result["failed"]}件）'
+        msg = f'投票を配信しました。（成功: {result["success"]}件, 失敗: {result["failed"]}件）'
         if result["success"] == 0:
             msg += ' ※プッシュ通知を送るには、ユーザーが一度ボットにメッセージを送る必要があります。'
             

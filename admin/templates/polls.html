@@ -41,6 +41,9 @@
                         {% if poll.status == 'draft' %}
                         <a href="{{ url_for('send_poll', poll_id=poll.id) }}"
                             class="btn-small btn-success" onclick="return confirm('この投票を配信しますか？')">配信</a>
+                        {% elif poll.status == 'published' %}
+                        <a href="{{ url_for('send_poll', poll_id=poll.id) }}"
+                            class="btn-small btn-warning" onclick="return confirm('【注意】この投票は既に公開されています。\n再配信しますか？')">再配信</a>
                         {% endif %}
                         <a href="{{ url_for('poll_results', poll_id=poll.id) }}"
                             class="btn-small">結果</a>
@@ -143,6 +146,15 @@
 
     .btn-danger:hover {
         background: #c0392b;
+    }
+
+    .btn-warning {
+        background: #f39c12;
+        color: white;
+    }
+
+    .btn-warning:hover {
+        background: #d68910;
     }
 
     .actions {

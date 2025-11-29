@@ -117,6 +117,7 @@ class Poll(Base):
     # リレーション
     options = relationship("PollOption", back_populates="poll", cascade="all, delete-orphan")
     responses = relationship("PollResponse", back_populates="poll", cascade="all, delete-orphan")
+    delivery_logs = relationship("PollDeliveryLog", back_populates="poll", cascade="all, delete-orphan")
 
 
 class PollOption(Base):
@@ -147,6 +148,21 @@ class PollResponse(Base):
     # リレーション
     poll = relationship("Poll", back_populates="responses")
     user = relationship("User", back_populates="poll_responses")
+
+
+class PollDeliveryLog(Base):
+    """投票配信ログモデル"""
+    __tablename__ = "poll_delivery_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    poll_id = Column(Integer, ForeignKey("polls.id", ondelete="CASCADE"), nullable=False)
+    sent_count = Column(Integer, default=0)
+    failed_count = Column(Integer, default=0)
+    target_user_count = Column(Integer, default=0)
+    sent_at = Column(DateTime, default=datetime.utcnow)
+    
+    # リレーション
+    poll = relationship("Poll", back_populates="delivery_logs")
 
 
 class PointsHistory(Base):

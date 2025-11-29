@@ -16,7 +16,7 @@ from linebot.v3.messaging import (
     TextMessage
 )
 
-from database.db_manager import get_db, Poll, PollOption, PollResponse, User
+from database.db_manager import get_db, Poll, PollOption, PollResponse, User, PollDeliveryLog
 from config import LINE_CHANNEL_ACCESS_TOKEN
 
 logger = logging.getLogger(__name__)
@@ -128,7 +128,8 @@ def get_poll_flex_message(poll_id: int) -> FlexMessage:
                         "action": {
                             "type": "postback",
                             "label": f"{i}. {option.option_text[:20]}",
-                            "data": f"poll:{poll_id}:{option.id}"
+                            "data": f"poll:{poll_id}:{option.id}",
+                            "displayText": f"{i}. {option.option_text}"
                         },
                         "style": "primary" if i == 1 else "secondary",
                         "margin": "sm"
@@ -177,6 +178,15 @@ def send_poll_to_users(poll_id: int, user_ids: List[str] = None) -> Dict:
         # Flex Message生成
         flex_message = get_poll_flex_message(poll_id)
         
+        # 配信ログ作成
+        delivery_log = PollDeliveryLog(
+            poll_id=poll_id,
+            target_user_count=len(users),
+            sent_at=datetime.utcnow()
+        )
+        db.add(delivery_log)
+        db.flush() # ID取得のためflush
+        
         # プッシュ配信
         configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
         success_count = 0
@@ -203,9 +213,15 @@ def send_poll_to_users(poll_id: int, user_ids: List[str] = None) -> Dict:
                     logger.error(f"Failed to send poll to user {user.id}: {e}")
                     failed_count += 1
         
+        # ログ更新
+        delivery_log.sent_count = success_count
+        delivery_log.failed_count = failed_count
+        
         # 投票のステータスを更新
-        poll.status = 'published'
-        poll.published_at = datetime.utcnow()
+        if poll.status == 'draft':
+            poll.status = 'published'
+            poll.published_at = datetime.utcnow()
+            
         db.commit()
         
         logger.info(f"Poll {poll_id} sent: {success_count} success, {failed_count} failed")

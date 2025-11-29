@@ -1,0 +1,120 @@
+nohup: ignoring input
+INFO:__main__:Initializing database...
+INFO:__main__:Starting Flask app on 0.0.0.0:5000
+Database tables created successfully
+ * Serving Flask app 'app'
+ * Debug mode: off
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.19.0.2:5000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:__main__:Request body: {"destination":"Ud37dff9f65ceab6594d5b529e4d16c6d","events":[{"type":"postback","postback":{"data":"poll:2:8"},"webhookEventId":"01KB72XEHTJ6PZ5F8ZVPR42KDT","deliveryContext":{"isRedelivery":false},"timestamp":1764395759706,"source":{"type":"user","userId":"U1655b3e25d58e3771ea4add5551b071e"},"replyToken":"fdd4ebb9968b497aa087b9bf3df6b752","mode":"active"}]}
+INFO:__main__:Postback from U1655b3e25d58e3771ea4add5551b071e: poll:2:8
+INFO:handlers.postback_handler:Postback from U1655b3e25d58e3771ea4add5551b071e: poll:2:8
+INFO:features.poll_handler:Poll response saved: user=9, poll=2, option=8
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:56:01] "POST /callback HTTP/1.1" 200 -
+INFO:__main__:Request body: {"destination":"Ud37dff9f65ceab6594d5b529e4d16c6d","events":[{"type":"postback","postback":{"data":"poll:2:7"},"webhookEventId":"01KB72Z5MAZSWVWAQ8EGFW1XYV","deliveryContext":{"isRedelivery":false},"timestamp":1764395816356,"source":{"type":"user","userId":"U3500bab3ede69ca6e436237360b32c96"},"replyToken":"63cae1c4dd5b43b1891c789e42bac44d","mode":"active"}]}
+INFO:__main__:Postback from U3500bab3ede69ca6e436237360b32c96: poll:2:7
+INFO:handlers.postback_handler:Postback from U3500bab3ede69ca6e436237360b32c96: poll:2:7
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:56:58] "POST /callback HTTP/1.1" 200 -
+INFO:__main__:Request body: {"destination":"Ud37dff9f65ceab6594d5b529e4d16c6d","events":[{"type":"postback","postback":{"data":"poll:5:17"},"webhookEventId":"01KB72ZR5QGZYTPKAVSEWQYF57","deliveryContext":{"isRedelivery":false},"timestamp":1764395835072,"source":{"type":"user","userId":"U3500bab3ede69ca6e436237360b32c96"},"replyToken":"d608098071844ffe8ab09734e2f4bd13","mode":"active"}]}
+INFO:__main__:Postback from U3500bab3ede69ca6e436237360b32c96: poll:5:17
+INFO:handlers.postback_handler:Postback from U3500bab3ede69ca6e436237360b32c96: poll:5:17
+INFO:features.poll_handler:Poll response saved: user=1, poll=5, option=17
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:57:16] "POST /callback HTTP/1.1" 200 -
+INFO:__main__:Request body: {"destination":"Ud37dff9f65ceab6594d5b529e4d16c6d","events":[{"type":"postback","postback":{"data":"poll:5:17"},"webhookEventId":"01KB72ZYZSW1K1DJPBYCK5Z7QH","deliveryContext":{"isRedelivery":false},"timestamp":1764395842270,"source":{"type":"user","userId":"Ud27cc12220dc00ced47f5fd999c45a76"},"replyToken":"d5001a76270143e8ab4f40fc7fa6b7e4","mode":"active"}]}
+INFO:__main__:Postback from Ud27cc12220dc00ced47f5fd999c45a76: poll:5:17
+INFO:handlers.postback_handler:Postback from Ud27cc12220dc00ced47f5fd999c45a76: poll:5:17
+INFO:features.poll_handler:Poll response saved: user=5, poll=5, option=17
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:57:24] "POST /callback HTTP/1.1" 200 -
+INFO:__main__:Request body: {"destination":"Ud37dff9f65ceab6594d5b529e4d16c6d","events":[{"type":"postback","postback":{"data":"poll:5:18"},"webhookEventId":"01KB730AJ44G7KKF8JDFJRQ6N4","deliveryContext":{"isRedelivery":false},"timestamp":1764395853902,"source":{"type":"user","userId":"Ud27cc12220dc00ced47f5fd999c45a76"},"replyToken":"79813cac6e3f4ed4815ee01bae73d19e","mode":"active"}]}
+INFO:__main__:Postback from Ud27cc12220dc00ced47f5fd999c45a76: poll:5:18
+INFO:handlers.postback_handler:Postback from Ud27cc12220dc00ced47f5fd999c45a76: poll:5:18
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:57:34] "POST /callback HTTP/1.1" 200 -
+INFO:__main__:Request body: {"destination":"Ud37dff9f65ceab6594d5b529e4d16c6d","events":[{"type":"postback","postback":{"data":"poll:5:18"},"webhookEventId":"01KB730N4N0JXTK050MSVTEQV1","deliveryContext":{"isRedelivery":false},"timestamp":1764395864824,"source":{"type":"user","userId":"Uc8e181e79ebc5fe95a235b3a29d55cf3"},"replyToken":"cb6f0021cf164f70b468babb70ca78cc","mode":"active"}]}
+INFO:__main__:Postback from Uc8e181e79ebc5fe95a235b3a29d55cf3: poll:5:18
+INFO:handlers.postback_handler:Postback from Uc8e181e79ebc5fe95a235b3a29d55cf3: poll:5:18
+INFO:features.poll_handler:Poll response saved: user=6, poll=5, option=18
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:57:46] "POST /callback HTTP/1.1" 200 -
+INFO:__main__:Request body: {"destination":"Ud37dff9f65ceab6594d5b529e4d16c6d","events":[{"type":"message","message":{"type":"text","id":"589827474611765373","quoteToken":"NoDFP69h02_5JLZS7-0PXFaUPXQA57yLnHbsvOrh6pndWFHB96q56vZ884VToj9l9W2DHahzLiDmh-YzuohMINQTGQnu76ZXkVNvWsZpIQxADCldZk3XmqBq23Fs_D7fTIfQv8Gj2FkFVu1yhDJkSw","markAsReadToken":"at5-opViqjqyytJxOQdV-z9rUHRaIzvT6soSmnJya4mA7q2MRZuWA3TZ_kKgn7EW4HONrEvLbHcsqvPBOB9sBzx32y4e80AtPLL4VEaeGrsX1CW-Hek4ffFI9BuD0lTeAda45jdj1e4lvvOUxeLTiTVIJ94iQo-b8OnA9idmpbYIJuJ2Ks0HddDgrWyrQNfLlcXE78L5gl80DIzSduiIRg","text":"1"},"webhookEventId":"01KB730Z8NCRBW45A2C1ZCBPEW","deliveryContext":{"isRedelivery":false},"timestamp":1764395875195,"source":{"type":"user","userId":"U633c9008433b1e9d16bd7a14b463b698"},"replyToken":"0394f39916cb4df7a9f1b4b85417034c","mode":"active"}]}
+INFO:__main__:Received message from U633c9008433b1e9d16bd7a14b463b698: 1
+INFO:__main__:User: 7 (hash: 5ead115d...)
+INFO:handlers.message_handler:Processing text message: '1'
+INFO:handlers.message_handler:Detected vote number: 1
+INFO:features.poll_handler:Poll response saved: user=7, poll=5, option=17
+INFO:handlers.message_handler:Poll response handled successfully
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:57:57] "POST /callback HTTP/1.1" 200 -
+INFO:__main__:Request body: {"destination":"Ud37dff9f65ceab6594d5b529e4d16c6d","events":[{"type":"postback","postback":{"data":"poll:5:18"},"webhookEventId":"01KB7310APY8SHEGD5T32R4M12","deliveryContext":{"isRedelivery":false},"timestamp":1764395876221,"source":{"type":"user","userId":"U1655b3e25d58e3771ea4add5551b071e"},"replyToken":"90559fa4734146df9568076843f929d0","mode":"active"}]}
+INFO:__main__:Postback from U1655b3e25d58e3771ea4add5551b071e: poll:5:18
+INFO:handlers.postback_handler:Postback from U1655b3e25d58e3771ea4add5551b071e: poll:5:18
+INFO:features.poll_handler:Poll response saved: user=9, poll=5, option=18
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:57:56] "POST /callback HTTP/1.1" 200 -
+INFO:__main__:Request body: {"destination":"Ud37dff9f65ceab6594d5b529e4d16c6d","events":[{"type":"postback","postback":{"data":"poll:5:19"},"webhookEventId":"01KB7311Z1CF1GW8WA6175BYF2","deliveryContext":{"isRedelivery":false},"timestamp":1764395877895,"source":{"type":"user","userId":"Ub51fa6a3f478c8dc100237c3bdfc8928"},"replyToken":"73faab3fea5948429550d06b8e451e74","mode":"active"}]}
+INFO:__main__:Postback from Ub51fa6a3f478c8dc100237c3bdfc8928: poll:5:19
+INFO:handlers.postback_handler:Postback from Ub51fa6a3f478c8dc100237c3bdfc8928: poll:5:19
+INFO:features.poll_handler:Poll response saved: user=8, poll=5, option=19
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:57:58] "POST /callback HTTP/1.1" 200 -
+INFO:__main__:Request body: {"destination":"Ud37dff9f65ceab6594d5b529e4d16c6d","events":[{"type":"postback","postback":{"data":"poll:6:22"},"webhookEventId":"01KB73167GA0XJQAAYMK0PVM3V","deliveryContext":{"isRedelivery":false},"timestamp":1764395882486,"source":{"type":"user","userId":"U1655b3e25d58e3771ea4add5551b071e"},"replyToken":"f2400609e1de419692b904e6552181bb","mode":"active"}]}
+INFO:__main__:Postback from U1655b3e25d58e3771ea4add5551b071e: poll:6:22
+INFO:handlers.postback_handler:Postback from U1655b3e25d58e3771ea4add5551b071e: poll:6:22
+INFO:features.poll_handler:Poll response saved: user=9, poll=6, option=22
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:58:03] "POST /callback HTTP/1.1" 200 -
+INFO:__main__:Request body: {"destination":"Ud37dff9f65ceab6594d5b529e4d16c6d","events":[{"type":"postback","postback":{"data":"poll:6:21"},"webhookEventId":"01KB7316KYVZHK8CBM7ZEANXEC","deliveryContext":{"isRedelivery":false},"timestamp":1764395882855,"source":{"type":"user","userId":"Ub51fa6a3f478c8dc100237c3bdfc8928"},"replyToken":"2690ff280e924725bd6fc2f7e040cd79","mode":"active"}]}
+INFO:__main__:Postback from Ub51fa6a3f478c8dc100237c3bdfc8928: poll:6:21
+INFO:handlers.postback_handler:Postback from Ub51fa6a3f478c8dc100237c3bdfc8928: poll:6:21
+INFO:features.poll_handler:Poll response saved: user=8, poll=6, option=21
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:58:03] "POST /callback HTTP/1.1" 200 -
+INFO:__main__:Request body: {"destination":"Ud37dff9f65ceab6594d5b529e4d16c6d","events":[{"type":"postback","postback":{"data":"poll:6:21"},"webhookEventId":"01KB7317TDES5G4T9V25YQYTA8","deliveryContext":{"isRedelivery":false},"timestamp":1764395883991,"source":{"type":"user","userId":"Ud27cc12220dc00ced47f5fd999c45a76"},"replyToken":"846a28a2f0564f7b99d159fdcecffb6a","mode":"active"}]}
+INFO:__main__:Postback from Ud27cc12220dc00ced47f5fd999c45a76: poll:6:21
+INFO:handlers.postback_handler:Postback from Ud27cc12220dc00ced47f5fd999c45a76: poll:6:21
+INFO:features.poll_handler:Poll response saved: user=5, poll=6, option=21
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:58:04] "POST /callback HTTP/1.1" 200 -
+INFO:__main__:Request body: {"destination":"Ud37dff9f65ceab6594d5b529e4d16c6d","events":[{"type":"message","message":{"type":"text","id":"589827491372991115","quoteToken":"7lgy2ey3kHYxoPOhHVQk5BYzZgywH1_pWtFAzZqAu4NSp8LpVPnUcELus1LGFMDSA0pBtaBm2zRANbwM7xm0GHzey_tqJfvBm5QrSlwmf7c2HtIn-22h3vHlu_rKKVYW3MLijMQO8a-JjFxxcr9rJw","markAsReadToken":"rt89w88jAVcUm5ACeBc_7-8a_khGTyVmq-Aj0-iidp62MLdLvXOGQe9Vh0Zw66COh8Ft-5chqyzs-9J4mHhHlYkJZYuRqeuQYfP0l5-l_mKKpxgED7lEp7amngwFty6LvnTwW_bzF6pCsEb6MdC2w2-6U8M0m3i6wIzWzSYa-wt7T3ntf5phevniQHeooxYi2ZnuCQX4EXTvyLd6a37GTQ","text":"1"},"webhookEventId":"01KB7318Q89KSD5629RJ9A11RQ","deliveryContext":{"isRedelivery":false},"timestamp":1764395885184,"source":{"type":"user","userId":"U633c9008433b1e9d16bd7a14b463b698"},"replyToken":"d4b1f333eab9413ea8b9277e74dd9867","mode":"active"}]}
+INFO:__main__:Received message from U633c9008433b1e9d16bd7a14b463b698: 1
+INFO:__main__:User: 7 (hash: 5ead115d...)
+INFO:handlers.message_handler:Processing text message: '1'
+INFO:handlers.message_handler:Detected vote number: 1
+INFO:features.poll_handler:Poll response saved: user=7, poll=6, option=21
+INFO:handlers.message_handler:Poll response handled successfully
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:58:05] "POST /callback HTTP/1.1" 200 -
+INFO:__main__:Request body: {"destination":"Ud37dff9f65ceab6594d5b529e4d16c6d","events":[{"type":"postback","postback":{"data":"poll:6:21"},"webhookEventId":"01KB731B8V0724HDSV5XYCXDDN","deliveryContext":{"isRedelivery":false},"timestamp":1764395887536,"source":{"type":"user","userId":"Ud27cc12220dc00ced47f5fd999c45a76"},"replyToken":"47d1cf821e60498d97aff359000863d3","mode":"active"}]}
+INFO:__main__:Postback from Ud27cc12220dc00ced47f5fd999c45a76: poll:6:21
+INFO:handlers.postback_handler:Postback from Ud27cc12220dc00ced47f5fd999c45a76: poll:6:21
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:58:08] "POST /callback HTTP/1.1" 200 -
+INFO:__main__:Request body: {"destination":"Ud37dff9f65ceab6594d5b529e4d16c6d","events":[{"type":"message","message":{"type":"text","id":"589827499425792546","quoteToken":"0jjgDbKlUuP3qe-3jKrbElBgohKCL9mpCtEcv9Tfjbx0FZQ9SfxQKy7XqF21a8TWqcl5haICciS64W9pX2hF7OyB5sKoTpGZEi0q4vpdXmI_ymK4nQ6GDJdF4IK0yA4PL4VgO3zgRcjZcGFL56j12A","markAsReadToken":"Zk4KQpN8wmxuJ4exw6XnOGZwChClwxENnzzqA31RSZzfXQGsQ6CqWUdc6uMo7tUDgDatpBJboqj-mI_zZrEoCxzAHQREwxrPXrU2GVQ8jb6y_C1PqPflKWy0DqYJpEU2493VL6opkrE324fnegEY_XbOFJxKDB9qp2cKF7SbZSafmSbNp8qJQoKv4h5n_x-xFCaQAMWg1LrRMk58YfuXMw","text":"4"},"webhookEventId":"01KB731DFCZT5H5H2GFS3CAMWC","deliveryContext":{"isRedelivery":false},"timestamp":1764395889834,"source":{"type":"user","userId":"U633c9008433b1e9d16bd7a14b463b698"},"replyToken":"baf4bf7e289b433eae613deb5efad01f","mode":"active"}]}
+INFO:__main__:Received message from U633c9008433b1e9d16bd7a14b463b698: 4
+INFO:__main__:User: 7 (hash: 5ead115d...)
+INFO:handlers.message_handler:Processing text message: '4'
+INFO:handlers.message_handler:Detected vote number: 4
+INFO:handlers.message_handler:Poll response handled successfully
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:58:11] "POST /callback HTTP/1.1" 200 -
+INFO:__main__:Request body: {"destination":"Ud37dff9f65ceab6594d5b529e4d16c6d","events":[{"type":"message","message":{"type":"text","id":"589827504575873503","quoteToken":"OdQISkRphqDj5SI4dPf_-AZ-za9REVw30mwxx3PVN39g78ToymwqYSUEY6tt8qQUAe-GeSrcVYB2sxrusvxfdurCunzCHNK2zaDIM-79EwMo2pNnssY4HFhlXMuKdjP2CUrpvl-F5FHJOA1h59E4rQ","markAsReadToken":"MLG9yKj3dsIr-1MgYVhjre0Bpjx4_bKfIqwqNHfef8YCtcBBVu6Wqb9B8AnjwmIR8t6XUD8YHAPHmZzFYu-akq8o83ftk_5mZnz_-38vaemFH0qczGsHBha-KdksP67xGe5uU5l1OrwEf1u8H5IfAMa6S26mHgLjeCgjqT4srTd4Tir3WStn_CLZ-Fb7YhkwzquKBmp0-mtZ73eRtw_tbw","text":"アンケート"},"webhookEventId":"01KB731GERCAP3FEJ8KESN6QB6","deliveryContext":{"isRedelivery":false},"timestamp":1764395893090,"source":{"type":"user","userId":"Ud27cc12220dc00ced47f5fd999c45a76"},"replyToken":"e20822d3ad764c1ea4734ba4807114ec","mode":"active"}]}
+INFO:__main__:Received message from Ud27cc12220dc00ced47f5fd999c45a76: アンケート
+INFO:__main__:User: 5 (hash: 68cdfb1b...)
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:58:14] "POST /callback HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:58:18] "GET /web/survey?user_id=Ud27cc12220dc00ced47f5fd999c45a76 HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:58:18] "GET /web/static/js/survey.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:58:18] "GET /web/static/css/survey.css HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:58:18] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+INFO:__main__:Request body: {"destination":"Ud37dff9f65ceab6594d5b529e4d16c6d","events":[{"type":"postback","postback":{"data":"poll:6:24"},"webhookEventId":"01KB731PPTQ57X5DYKZZ2ZFBS1","deliveryContext":{"isRedelivery":false},"timestamp":1764395899107,"source":{"type":"user","userId":"Uc8e181e79ebc5fe95a235b3a29d55cf3"},"replyToken":"9194481333444f6193f753018252c39b","mode":"active"}]}
+INFO:__main__:Postback from Uc8e181e79ebc5fe95a235b3a29d55cf3: poll:6:24
+INFO:handlers.postback_handler:Postback from Uc8e181e79ebc5fe95a235b3a29d55cf3: poll:6:24
+INFO:features.poll_handler:Poll response saved: user=6, poll=6, option=24
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:58:21] "POST /callback HTTP/1.1" 200 -
+INFO:__main__:Request body: {"destination":"Ud37dff9f65ceab6594d5b529e4d16c6d","events":[{"type":"postback","postback":{"data":"poll:6:24"},"webhookEventId":"01KB731QTHHA5D3XJRN0J0QVKK","deliveryContext":{"isRedelivery":false},"timestamp":1764395900494,"source":{"type":"user","userId":"U1655b3e25d58e3771ea4add5551b071e"},"replyToken":"19bfe8bc7039488c808a1c06c34cebeb","mode":"active"}]}
+INFO:__main__:Postback from U1655b3e25d58e3771ea4add5551b071e: poll:6:24
+INFO:handlers.postback_handler:Postback from U1655b3e25d58e3771ea4add5551b071e: poll:6:24
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:58:22] "POST /callback HTTP/1.1" 200 -
+INFO:__main__:Request body: {"destination":"Ud37dff9f65ceab6594d5b529e4d16c6d","events":[{"type":"postback","postback":{"data":"poll:6:23"},"webhookEventId":"01KB731STZQRJMGTT7KZCH0D7F","deliveryContext":{"isRedelivery":false},"timestamp":1764395902741,"source":{"type":"user","userId":"Uc8e181e79ebc5fe95a235b3a29d55cf3"},"replyToken":"59290de12a1e4dd3bb31d9c0326c2474","mode":"active"}]}
+INFO:__main__:Postback from Uc8e181e79ebc5fe95a235b3a29d55cf3: poll:6:23
+INFO:handlers.postback_handler:Postback from Uc8e181e79ebc5fe95a235b3a29d55cf3: poll:6:23
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:58:24] "POST /callback HTTP/1.1" 200 -
+INFO:__main__:Request body: {"destination":"Ud37dff9f65ceab6594d5b529e4d16c6d","events":[{"type":"postback","postback":{"data":"poll:6:23"},"webhookEventId":"01KB731VDHPE11HZY7BD0H3T7A","deliveryContext":{"isRedelivery":false},"timestamp":1764395904354,"source":{"type":"user","userId":"U1655b3e25d58e3771ea4add5551b071e"},"replyToken":"36c370020ad847c58ecdba20f4727dee","mode":"active"}]}
+INFO:__main__:Postback from U1655b3e25d58e3771ea4add5551b071e: poll:6:23
+INFO:handlers.postback_handler:Postback from U1655b3e25d58e3771ea4add5551b071e: poll:6:23
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:58:25] "POST /callback HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:58:48] "GET /web/survey?user_id=Ud27cc12220dc00ced47f5fd999c45a76 HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:58:48] "[36mGET /web/static/js/survey.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:58:48] "[36mGET /web/static/css/survey.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [29/Nov/2025 14:58:48] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
