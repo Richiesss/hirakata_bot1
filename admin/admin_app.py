@@ -381,6 +381,99 @@ def close_poll(poll_id):
     return redirect(url_for('polls'))
 
 
+@app.route('/admin/users')
+@login_required
+def users():
+    """ユーザー管理画面"""
+    with get_db() as db:
+        users_list = db.query(User).order_by(User.created_at.desc()).all()
+        return render_template('users.html', users=users_list)
+
+
+@app.route('/admin/users/<int:user_id>/points', methods=['POST'])
+@login_required
+def grant_points(user_id):
+    """ポイント付与"""
+    from database.db_manager import add_points
+    
+    points = request.form.get('points', type=int)
+    reason = request.form.get('reason', '管理者による付与')
+    
+    if not points:
+        flash('ポイント数を入力してください', 'error')
+        return redirect(url_for('users'))
+        
+    try:
+        with get_db() as db:
+            add_points(db, user_id, points, reason)
+            flash(f'ポイントを付与しました（{points}pt）', 'success')
+    except Exception as e:
+        flash(f'エラーが発生しました: {str(e)}', 'error')
+        
+    return redirect(url_for('users'))
+
+
+@app.route('/admin/export/report')
+@login_required
+def export_report():
+    """Excelレポート出力"""
+    from database.db_manager import Poll, PollResponse
+    
+    try:
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            with get_db() as db:
+                # 1. 意見データ
+                opinions = db.query(Opinion).order_by(Opinion.created_at.desc()).all()
+                op_data = [{
+                    'ID': op.id,
+                    '日時': op.created_at,
+                    'カテゴリ': op.category,
+                    '内容': op.content,
+                    '優先度': op.priority_score,
+                    '感情': op.emotion_score
+                } for op in opinions]
+                pd.DataFrame(op_data).to_excel(writer, sheet_name='意見一覧', index=False)
+                
+                # 2. ユーザー統計
+                users = db.query(User).all()
+                user_data = [{
+                    'ID': u.id,
+                    '登録日': u.created_at,
+                    'ポイント': u.total_points,
+                    '年代': u.age_range,
+                    '地域': u.district
+                } for u in users]
+                pd.DataFrame(user_data).to_excel(writer, sheet_name='ユーザー一覧', index=False)
+                
+                # 3. 投票結果サマリ
+                polls = db.query(Poll).all()
+                poll_data = []
+                for p in polls:
+                    resp_count = db.query(PollResponse).filter(PollResponse.poll_id == p.id).count()
+                    poll_data.append({
+                        'ID': p.id,
+                        'タイトル': p.title,
+                        'ステータス': p.status,
+                        '回答数': resp_count,
+                        '作成日': p.created_at
+                    })
+                pd.DataFrame(poll_data).to_excel(writer, sheet_name='投票サマリ', index=False)
+                
+        output.seek(0)
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=f'report_{datetime.now().strftime("%Y%m%d")}.xlsx'
+        )
+        
+    except Exception as e:
+        flash(f'レポート生成エラー: {str(e)}', 'error')
+        return redirect(url_for('dashboard'))
+
+
 if __name__ == '__main__':
     # 初回起動時に管理者ユーザーを作成
     with get_db() as db:

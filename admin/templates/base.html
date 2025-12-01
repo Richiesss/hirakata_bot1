@@ -32,6 +32,12 @@
             <li><a href="{{ url_for('stats') }}" class="{% if request.endpoint == 'stats' %}active{% endif %}">
                     📈 統計・分析
                 </a></li>
+            <li><a href="{{ url_for('users') }}" class="{% if request.endpoint == 'users' %}active{% endif %}">
+                    👥 ユーザー管理
+                </a></li>
+            <li><a href="{{ url_for('export_report') }}">
+                    📑 レポート出力
+                </a></li>
             <li><a href="{{ url_for('export_csv') }}">
                     📥 CSV出力
                 </a></li>
