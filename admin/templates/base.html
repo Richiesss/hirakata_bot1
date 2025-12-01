@@ -6,62 +6,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}管理画面{% endblock %} - 枚方市民ニーズ抽出システム</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     {% block extra_css %}{% endblock %}
 </head>
 
 <body>
     {% if current_user.is_authenticated %}
-    <nav class="sidebar">
-        <div class="logo">
-            <h2>枚方市</h2>
-            <p>ニーズ抽出システム</p>
-        </div>
-        <ul class="nav-menu">
-            <li><a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}">
-                    📊 ダッシュボード
-                </a></li>
-            <li><a href="{{ url_for('opinions') }}" class="{% if request.endpoint == 'opinions' %}active{% endif %}">
-                    💬 意見一覧
-                </a></li>
-            <li><a href="{{ url_for('polls') }}" class="{% if request.endpoint == 'polls' %}active{% endif %}">
-                    📋 投票管理
-                </a></li>
-            <li><a href="{{ url_for('analysis') }}" class="{% if request.endpoint == 'analysis' %}active{% endif %}">
-                    🤖 AI分析
-                </a></li>
-            <li><a href="{{ url_for('stats') }}" class="{% if request.endpoint == 'stats' %}active{% endif %}">
-                    📈 統計・分析
-                </a></li>
-            <li><a href="{{ url_for('users') }}" class="{% if request.endpoint == 'users' %}active{% endif %}">
-                    👥 ユーザー管理
-                </a></li>
-            <li><a href="{{ url_for('export_report') }}">
-                    📑 レポート出力
-                </a></li>
-            <li><a href="{{ url_for('export_csv') }}">
-                    📥 CSV出力
-                </a></li>
-        </ul>
-        <div class="user-info">
-            <p>ログイン中: {{ current_user.username }}</p>
-            <a href="{{ url_for('logout') }}" class="btn-logout">ログアウト</a>
-        </div>
-    </nav>
-    {% endif %}
+    <div class="wrapper">
+        <nav class="sidebar">
+            <div class="logo">
+                <h2>枚方市</h2>
+                <p>市民ニーズ抽出システム</p>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('dashboard') }}"
+                        class="{{ 'active' if request.endpoint == 'dashboard' else '' }}">
+                        <i class="fas fa-chart-line"></i> ダッシュボード
+                    </a></li>
+                <li><a href="{{ url_for('opinions') }}"
+                        class="{{ 'active' if request.endpoint == 'opinions' else '' }}">
+                        <i class="fas fa-comments"></i> 意見一覧
+                    </a></li>
+                <li><a href="{{ url_for('polls') }}" class="{{ 'active' if request.endpoint == 'polls' else '' }}">
+                        <i class="fas fa-poll"></i> 投票管理
+                    </a></li>
+                <li><a href="{{ url_for('analysis') }}"
+                        class="{{ 'active' if request.endpoint == 'analysis' else '' }}">
+                        <i class="fas fa-brain"></i> AI分析
+                    </a></li>
+                <li><a href="{{ url_for('stats') }}" class="{{ 'active' if request.endpoint == 'stats' else '' }}">
+                        <i class="fas fa-chart-pie"></i> 統計・分析
+                    </a></li>
+                <li><a href="{{ url_for('users') }}" class="{{ 'active' if request.endpoint == 'users' else '' }}">
+                        <i class="fas fa-users"></i> ユーザー管理
+                    </a></li>
+                <li><a href="{{ url_for('export_report') }}"
+                        class="{{ 'active' if request.endpoint == 'export_report' else '' }}">
+                        <i class="fas fa-file-export"></i> レポート出力
+                    </a></li>
+                <li><a href="{{ url_for('export_csv') }}"
+                        class="{{ 'active' if request.endpoint == 'export_csv' else '' }}">
+                        <i class="fas fa-file-csv"></i> CSV出力
+                    </a></li>
+            </ul>
+            <div class="user-info">
+                <p><i class="fas fa-user-circle"></i> {{ current_user.username }}</p>
+                <a href="{{ url_for('logout') }}" class="btn-logout">ログアウト</a>
+            </div>
+        </nav>
 
-    <div class="main-content">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="flash-messages">
-            {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">{{ message }}</div>
-            {% endfor %}
-        </div>
-        {% endif %}
-        {% endwith %}
+        <main class="main-content">
+            <div class="page-header">
+                <h1>{% block page_title %}{% endblock %}</h1>
+            </div>
 
-        {% block content %}{% endblock %}
+            <div class="flash-messages">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+            </div>
+
+            {% block content %}{% endblock %}
+        </main>
     </div>
+    {% else %}
+    {% block login_content %}{% endblock %}
+    {% endif %}
 
     {% block extra_js %}{% endblock %}
 </body>
