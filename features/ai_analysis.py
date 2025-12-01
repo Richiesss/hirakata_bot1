@@ -226,6 +226,90 @@ class OpinionAnalyzer:
         
         return img_str
 
+    def calculate_priority_score(self, text: str) -> float:
+        """
+        意見の優先度スコアを計算する (0.0 - 1.0)
+        
+        Args:
+            text: 意見テキスト
+            
+        Returns:
+            float: 優先度スコア
+        """
+        score = 0.2  # デフォルト（低）
+        
+        # キーワードベースのヒューリスティック
+        critical_keywords = ['危険', '事故', '緊急', '犯罪', '火災', '倒壊', '命', '死', '怪我', '救急']
+        high_keywords = ['困る', '被害', '苦情', '破損', '汚染', '騒音', '悪臭', '不法投棄', '暴力']
+        medium_keywords = ['要望', '提案', '不便', '改善', '欲しい', '足りない', '遅い', '高い']
+        
+        for kw in critical_keywords:
+            if kw in text:
+                return 1.0  # 即時対応レベル
+                
+        for kw in high_keywords:
+            if kw in text:
+                score = max(score, 0.8)
+                
+        for kw in medium_keywords:
+            if kw in text:
+                score = max(score, 0.5)
+                
+        # 文字数による加点（長文は熱量が高い可能性があるため、少し加点）
+        if len(text) > 100:
+            score = min(score + 0.1, 1.0)
+            
+        return score
+
+    def analyze_trends(self, opinions: List[Dict[str, Any]], period: str = 'monthly') -> Dict[str, Any]:
+        """
+        意見のトレンド分析を行う
+        
+        Args:
+            opinions: 意見リスト [{"created_at": datetime, "priority_score": float, ...}]
+            period: 集計期間 'monthly' or 'daily'
+            
+        Returns:
+            トレンド分析結果
+        """
+        if not opinions:
+            return {"error": "No opinions to analyze"}
+            
+        from collections import defaultdict
+        import pandas as pd
+        
+        # データフレーム作成
+        df = pd.DataFrame(opinions)
+        if 'created_at' not in df.columns:
+            return {"error": "Missing 'created_at' in opinions"}
+            
+        # 日付変換
+        df['created_at'] = pd.to_datetime(df['created_at'])
+        
+        # 期間設定
+        if period == 'monthly':
+            df['period'] = df['created_at'].dt.to_period('M').astype(str)
+        else:
+            df['period'] = df['created_at'].dt.to_period('D').astype(str)
+            
+        # 集計
+        trend_data = []
+        grouped = df.groupby('period')
+        
+        for name, group in grouped:
+            period_stats = {
+                "period": name,
+                "count": len(group),
+                "avg_priority": float(group['priority_score'].mean()) if 'priority_score' in group.columns else 0.0,
+                "avg_emotion": float(group['emotion_score'].mean()) if 'emotion_score' in group.columns else 0.0
+            }
+            trend_data.append(period_stats)
+            
+        return {
+            "trends": trend_data,
+            "total_count": len(opinions)
+        }
+
 # シングルトンインスタンス（ロード時間を節約するため）
 _analyzer_instance = None
 
