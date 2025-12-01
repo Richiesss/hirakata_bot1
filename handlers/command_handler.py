@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 def is_command(text: str) -> bool:
     """テキストがコマンドかどうかを判定"""
-    return text.startswith('/') or text in ['アンケート', '投票']
+    return text.startswith('/') or text in ['アンケート', '投票', '履歴', '設定']
 
 def handle_command(user_id: str, text: str) -> list:
     """コマンドを処理
@@ -36,6 +36,10 @@ def handle_command(user_id: str, text: str) -> list:
         return handle_reset(user_id)
     elif text_lower == '/point':
         return handle_point(user_id)
+    elif text_lower == '/history' or text == '履歴':
+        return handle_history(user_id)
+    elif text_lower == '/settings' or text == '設定':
+        return handle_settings(user_id)
     else:
         return [TextMessage(text="不明なコマンドです。/help でコマンド一覧を確認できます。")]
 
@@ -138,3 +142,28 @@ def handle_point(user_id: str) -> list:
     except Exception as e:
         logger.error(f"Error in handle_point: {e}")
         return [TextMessage(text="ポイント取得でエラーが発生しました。")]
+
+
+def handle_history(user_id: str) -> list:
+    """活動履歴を表示"""
+    from features.utility_manager import get_user_history, format_history_message
+    
+    try:
+        history_data = get_user_history(user_id)
+        flex_message = format_history_message(history_data)
+        return [flex_message]
+    except Exception as e:
+        logger.error(f"Error in handle_history: {e}")
+        return [TextMessage(text="履歴の取得に失敗しました。")]
+
+
+def handle_settings(user_id: str) -> list:
+    """設定画面を表示"""
+    from features.utility_manager import get_settings_message
+    
+    try:
+        flex_message = get_settings_message(user_id)
+        return [flex_message]
+    except Exception as e:
+        logger.error(f"Error in handle_settings: {e}")
+        return [TextMessage(text="設定画面の表示に失敗しました。")]

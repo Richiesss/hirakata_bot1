@@ -58,5 +58,30 @@ def handle_postback(user_id: str, postback_data: str) -> List[TextMessage]:
             logger.error(f"Error handling register postback: {e}", exc_info=True)
             return [TextMessage(text="登録処理中にエラーが発生しました。")]
 
+    # 通知設定切り替え
+    elif 'action=toggle_notification' in postback_data:
+        from features.utility_manager import update_notification_setting, get_settings_message
+        
+        try:
+            # パラメータ解析 (簡易的)
+            value_str = 'false'
+            if 'value=true' in postback_data:
+                value_str = 'true'
+            
+            enabled = (value_str == 'true')
+            
+            if update_notification_setting(user_id, enabled):
+                # 設定画面を再表示（状態更新のため）
+                return [
+                    TextMessage(text=f"通知を{'ON' if enabled else 'OFF'}にしました。"),
+                    get_settings_message(user_id)
+                ]
+            else:
+                return [TextMessage(text="設定の更新に失敗しました。")]
+                
+        except Exception as e:
+            logger.error(f"Error handling notification toggle: {e}", exc_info=True)
+            return [TextMessage(text="エラーが発生しました。")]
+
     # その他のポストバック
     return [TextMessage(text="この機能は準備中です。")]
