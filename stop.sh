@@ -3,20 +3,24 @@
 
 echo "=== システム停止 ==="
 
-# LINE Botの停止
-if pgrep -f "python.*app.py" > /dev/null; then
-    echo "LINE Botを停止中..."
-    pkill -f "python.*app.py" || true
+# Gunicornプロセスの停止
+if pgrep -f "gunicorn" > /dev/null; then
+    echo "Gunicornプロセスを停止中..."
+    pkill -f "gunicorn" || true
 else
-    echo "LINE Botは起動していません"
+    echo "Gunicornプロセスは起動していません"
 fi
 
-# 管理画面の停止
+# LINE Botの停止 (Legacy)
+if pgrep -f "python.*app.py" > /dev/null; then
+    echo "LINE Bot(Dev)を停止中..."
+    pkill -f "python.*app.py" || true
+fi
+
+# 管理画面の停止 (Legacy)
 if pgrep -f "python.*admin_app.py" > /dev/null; then
-    echo "管理画面を停止中..."
+    echo "管理画面(Dev)を停止中..."
     pkill -f "python.*admin_app.py" || true
-else
-    echo "管理画面は起動していません"
 fi
 
 sleep 2

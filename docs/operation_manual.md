@@ -9,6 +9,12 @@
 ## 2. 起動・停止手順
 
 ### Dockerを使用する場合（推奨）
+**準備:**
+1. `.env.production` ファイルを開き、必要な環境変数（LINEチャネル設定など）を編集してください。
+   ```bash
+   vi .env.production
+   ```
+
 **起動:**
 ```bash
 docker-compose up -d

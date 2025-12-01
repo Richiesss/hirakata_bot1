@@ -2,7 +2,7 @@
 
 {% block title %}ログイン{% endblock %}
 
-{% block content %}
+{% block login_content %}
 <div class="login-container">
     <div class="login-box">
         <h1>管理画面ログイン</h1>
@@ -11,15 +11,15 @@
         <form method="POST" action="{{ url_for('login') }}">
             <div class="form-group">
                 <label for="username">ユーザー名</label>
-                <input type="text" id="username" name="username" required autofocus>
+                <input type="text" id="username" name="username" class="form-control" required autofocus>
             </div>
 
             <div class="form-group">
                 <label for="password">パスワード</label>
-                <input type="password" id="password" name="password" required>
+                <input type="password" id="password" name="password" class="form-control" required>
             </div>
 
-            <button type="submit" class="btn-primary">ログイン</button>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">ログイン</button>
         </form>
 
         <div class="login-info">

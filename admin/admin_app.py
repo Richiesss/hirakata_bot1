@@ -143,12 +143,18 @@ def dashboard():
         
         # 日別推移（過去7日間）
         seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        
+        if db.bind.dialect.name == 'postgresql':
+            date_col = func.to_char(Opinion.created_at, 'YYYY-MM-DD')
+        else:
+            date_col = func.date(Opinion.created_at)
+
         daily_stats = db.query(
-            func.date(Opinion.created_at).label('date'),
+            date_col.label('date'),
             func.count(Opinion.id).label('count')
         ).filter(
             Opinion.created_at >= seven_days_ago
-        ).group_by(func.date(Opinion.created_at)).all()
+        ).group_by(date_col).all()
         
         # daily_statsの最大値を計算
         daily_stats_max = max([d.count for d in daily_stats]) if daily_stats else 1
@@ -253,10 +259,15 @@ def stats():
         ).group_by(Opinion.category).all()
         
         # 月別推移
+        if db.bind.dialect.name == 'postgresql':
+            month_col = func.to_char(Opinion.created_at, 'YYYY-MM')
+        else:
+            month_col = func.strftime('%Y-%m', Opinion.created_at)
+
         monthly_data = db.query(
-            func.strftime('%Y-%m', Opinion.created_at).label('month'),
+            month_col.label('month'),
             func.count(Opinion.id).label('count')
-        ).group_by(func.strftime('%Y-%m', Opinion.created_at)).all()
+        ).group_by(month_col).all()
         
         return render_template('stats.html',
             category_data=category_data,
