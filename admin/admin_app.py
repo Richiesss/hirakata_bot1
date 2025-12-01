@@ -25,6 +25,23 @@ app = Flask(__name__,
             template_folder=os.path.join(BASE_DIR, 'templates'),
             static_folder=os.path.join(BASE_DIR, 'static'))
 app.config['SECRET_KEY'] = SECRET_KEY
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+# app.config['SESSION_COOKIE_SECURE'] = True # HTTPS化したら有効にする
+
+# ログ設定
+import logging
+from logging.handlers import RotatingFileHandler
+
+if not os.path.exists('logs'):
+    os.makedirs('logs')
+
+file_handler = RotatingFileHandler('logs/admin.log', maxBytes=1024*1024, backupCount=10)
+file_handler.setFormatter(logging.Formatter(
+    '[%(asctime)s] %(levelname)s in %(module)s: %(message)s'
+))
+app.logger.addHandler(file_handler)
+app.logger.setLevel(logging.INFO)
 
 # Flask-Login設定
 login_manager = LoginManager()
@@ -46,6 +63,19 @@ def load_user(user_id):
         return user
     finally:
         db.close()
+
+
+@app.route('/health')
+def health():
+    """ヘルスチェック"""
+    from sqlalchemy import text
+    try:
+        with get_db() as db:
+            db.execute(text("SELECT 1"))
+        return {"status": "ok", "db": "connected"}
+    except Exception as e:
+        app.logger.error(f"Health check failed: {e}")
+        return {"status": "error", "message": str(e)}, 500
 
 
 @app.route('/admin/login', methods=['GET', 'POST'])

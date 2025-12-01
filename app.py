@@ -35,9 +35,22 @@ from handlers.postback_handler import handle_postback
 from web.survey_form import survey_bp
 
 # ログ設定
+from logging.handlers import RotatingFileHandler
+import os
+
+# ログディレクトリ作成
+if not os.path.exists('logs'):
+    os.makedirs('logs')
+
+file_handler = RotatingFileHandler('logs/linebot.log', maxBytes=1024*1024, backupCount=10)
+file_handler.setFormatter(logging.Formatter(
+    '[%(asctime)s] %(levelname)s in %(module)s: %(message)s'
+))
+
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[file_handler, logging.StreamHandler()]
 )
 logger = logging.getLogger(__name__)
 

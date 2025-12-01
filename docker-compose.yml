@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  hirakata-bot:
+    build: .
+    container_name: hirakata_bot
+    ports:
+      - "5000:5000"
+      - "8080:8080"
+    volumes:
+      - ./instance:/app/instance
+      - ./logs:/app/logs
+      - ./admin/static/tmp:/app/admin/static/tmp
+    env_file:
+      - .env
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
