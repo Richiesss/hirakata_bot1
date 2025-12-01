@@ -40,7 +40,7 @@
     <div class="card">
         <h2>意見の分布 (クラスタリング結果)</h2>
         <div class="plot-container" style="text-align: center;">
-            <img src="data:image/png;base64,{{ results.plot_image }}" alt="Clustering Plot"
+            <img src="{{ url_for('static', filename='tmp/' + results.plot_image_file) }}" alt="Clustering Plot"
                 style="max-width: 100%; border-radius: 8px;">
         </div>
     </div>
@@ -98,7 +98,7 @@
 
     .cluster-header {
         display: flex;
-        justify_content: space-between;
+        justify-content: space-between;
         align-items: center;
         margin-bottom: 10px;
     }

@@ -10,6 +10,8 @@ import os
 from datetime import datetime, timedelta
 import pandas as pd
 import io
+import base64
+import uuid
 
 from database.db_manager import get_db, Opinion, User, ChatSession, PointsHistory, AdminUser
 from admin.auth import verify_password, create_admin_user
@@ -352,13 +354,30 @@ def run_analysis():
         if "error" in results:
             flash(f'分析エラー: {results["error"]}', 'error')
         else:
-            # 結果をセッションに保存（サイズに注意。大きすぎる場合はDBかファイルへ）
-            # プロット画像がBase64で大きい可能性があるため、本来はファイル保存推奨
-            # ここでは簡易的にセッションを使うが、容量オーバーのリスクあり
-            # -> 安全のため、プロット画像以外をセッションに入れ、画像は一時ファイルにするか...
-            # 今回はデモなのでそのままいくが、エラーが出たら修正する
-            session['analysis_results'] = results
-            flash('分析が完了しました。', 'success')
+            # プロット画像をファイルとして保存（セッション容量対策）
+            try:
+                img_data = base64.b64decode(results['plot_image'])
+                filename = f"analysis_{uuid.uuid4().hex}.png"
+                filepath = os.path.join(app.static_folder, 'tmp', filename)
+                
+                # tmpディレクトリがない場合は作成
+                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                
+                with open(filepath, 'wb') as f:
+                    f.write(img_data)
+                
+                # セッションにはファイル名のみ保存
+                results['plot_image_file'] = filename
+                del results['plot_image'] # Base64データは削除
+                
+                session['analysis_results'] = results
+                flash('分析が完了しました。', 'success')
+            except Exception as e:
+                flash(f'画像保存エラー: {str(e)}', 'error')
+                # 画像なしでも結果は表示する
+                if 'plot_image' in results:
+                    del results['plot_image']
+                session['analysis_results'] = results
             
     except Exception as e:
         flash(f'システムエラー: {str(e)}', 'error')

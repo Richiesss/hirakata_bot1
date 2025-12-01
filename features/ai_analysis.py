@@ -204,7 +204,27 @@ class OpinionAnalyzer:
         散布図を生成しBase64文字列で返す
         """
         plt.figure(figsize=(10, 8))
-        sns.set(style="whitegrid", font="IPAGothic") # 日本語フォントがあれば指定したいが、環境による
+        
+        # 日本語フォント設定
+        import matplotlib.font_manager as fm
+        import os
+        
+        # システムにインストールされたNoto Sans CJKを使用
+        font_path = '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'
+        if os.path.exists(font_path):
+            fm.fontManager.addfont(font_path)
+            plt.rcParams['font.family'] = 'Noto Sans CJK JP'
+            sns.set(style="whitegrid", font="Noto Sans CJK JP")
+        else:
+            # フォールバック（他のパスも試す）
+            font_path_alt = '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc'
+            if os.path.exists(font_path_alt):
+                fm.fontManager.addfont(font_path_alt)
+                plt.rcParams['font.family'] = 'Noto Sans CJK JP'
+                sns.set(style="whitegrid", font="Noto Sans CJK JP")
+            else:
+                sns.set(style="whitegrid", font="IPAGothic") # 最終フォールバック
+
         
         # データをDataFrameに変換してプロットしやすくする
         x = [d["x"] for d in data]
@@ -214,8 +234,8 @@ class OpinionAnalyzer:
         scatter = plt.scatter(x, y, c=clusters, cmap='viridis', s=100, alpha=0.7)
         plt.colorbar(scatter, label='Cluster')
         plt.title('意見の分布 (AI分析結果)')
-        plt.xlabel('Dimension 1')
-        plt.ylabel('Dimension 2')
+        plt.xlabel('次元 1')
+        plt.ylabel('次元 2')
         
         # 画像をバッファに保存
         buf = io.BytesIO()

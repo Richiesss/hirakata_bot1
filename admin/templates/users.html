@@ -31,8 +31,9 @@
                     <td>{{ user.district or '-' }}</td>
                     <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
                     <td>
+                        {% set display_label = user.display_name or ('ID: ' ~ user.id) %}
                         <button class="btn-small btn-primary"
-                            onclick="openPointModal('{{ user.id }}', '{{ user.display_name or 'ID: ' + user.id|string }}')">
+                            onclick="openPointModal('{{ user.id }}', '{{ display_label }}')">
                             ポイント付与
                         </button>
                     </td>
