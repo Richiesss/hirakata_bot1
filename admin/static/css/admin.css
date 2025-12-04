@@ -264,25 +264,28 @@ body {
 
 .btn {
     display: inline-block;
-    padding: 10px 20px;
-    border-radius: 4px;
+    padding: 10px 24px;
+    border-radius: 25px; /* 丸みのあるデザイン */
     font-size: 14px;
     font-weight: 600;
     text-align: center;
     cursor: pointer;
     border: none;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
     text-decoration: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .btn-primary {
-    background-color: var(--primary-color);
+    background: linear-gradient(135deg, var(--primary-color) 0%, #004080 100%);
     color: white;
+    border: 1px solid rgba(255,255,255,0.1);
 }
 
 .btn-primary:hover {
-    background-color: #002244;
-    transform: translateY(-1px);
+    background: linear-gradient(135deg, #002244 0%, #003366 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
 /* ログイン画面 */
@@ -475,19 +478,20 @@ body {
         overflow-x: visible;
     }
 
-    .opinions-table, .stats-table, 
+    .opinions-table, .stats-table, .data-table,
     .opinions-table thead, .opinions-table tbody, .opinions-table th, .opinions-table td, .opinions-table tr,
-    .stats-table thead, .stats-table tbody, .stats-table th, .stats-table td, .stats-table tr {
+    .stats-table thead, .stats-table tbody, .stats-table th, .stats-table td, .stats-table tr,
+    .data-table thead, .data-table tbody, .data-table th, .data-table td, .data-table tr {
         display: block;
     }
 
-    .opinions-table thead, .stats-table thead {
+    .opinions-table thead, .stats-table thead, .data-table thead {
         position: absolute;
         top: -9999px;
         left: -9999px;
     }
 
-    .opinions-table tr, .stats-table tr {
+    .opinions-table tr, .stats-table tr, .data-table tr {
         border: 1px solid #ddd;
         margin-bottom: 15px;
         background: #fff;
@@ -495,7 +499,7 @@ body {
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
-    .opinions-table td, .stats-table td {
+    .opinions-table td, .stats-table td, .data-table td {
         border: none;
         border-bottom: 1px solid #eee;
         position: relative;
@@ -507,11 +511,11 @@ body {
         flex-wrap: wrap;
     }
 
-    .opinions-table td:last-child, .stats-table td:last-child {
+    .opinions-table td:last-child, .stats-table td:last-child, .data-table td:last-child {
         border-bottom: none;
     }
 
-    .opinions-table td:before, .stats-table td:before {
+    .opinions-table td:before, .stats-table td:before, .data-table td:before {
         position: absolute;
         top: 12px; /* flex align-items centerなのでtop調整 */
         left: 10px;

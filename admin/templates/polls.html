@@ -28,28 +28,27 @@
             <tbody>
                 {% for poll in polls %}
                 <tr>
-                    <td>{{ poll.id }}</td>
-                    <td>{{ poll.title[:50] }}...</td>
-                    <td>
+                    <td data-label="ID">{{ poll.id }}</td>
+                    <td data-label="質問">{{ poll.title[:50] }}...</td>
+                    <td data-label="ステータス">
                         <span class="badge badge-{{ poll.status }}">
                             {{ poll.status }}
                         </span>
                     </td>
-                    <td>{{ poll.response_count }}件</td>
-                    <td>{{ poll.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td class="actions">
+                    <td data-label="回答数">{{ poll.response_count }}件</td>
+                    <td data-label="作成日時">{{ poll.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td data-label="操作" class="actions">
                         {% if poll.status == 'draft' %}
-                        <a href="{{ url_for('send_poll', poll_id=poll.id) }}"
-                            class="btn-small btn-success" onclick="return confirm('この投票を配信しますか？')">配信</a>
+                        <a href="{{ url_for('send_poll', poll_id=poll.id) }}" class="btn-small btn-success"
+                            onclick="return confirm('この投票を配信しますか？')">配信</a>
                         {% elif poll.status == 'published' %}
-                        <a href="{{ url_for('send_poll', poll_id=poll.id) }}"
-                            class="btn-small btn-warning" onclick="return confirm('【注意】この投票は既に公開されています。\n再配信しますか？')">再配信</a>
+                        <a href="{{ url_for('send_poll', poll_id=poll.id) }}" class="btn-small btn-warning"
+                            onclick="return confirm('【注意】この投票は既に公開されています。\n再配信しますか？')">再配信</a>
                         {% endif %}
-                        <a href="{{ url_for('poll_results', poll_id=poll.id) }}"
-                            class="btn-small">結果</a>
+                        <a href="{{ url_for('poll_results', poll_id=poll.id) }}" class="btn-small">結果</a>
                         {% if poll.status == 'published' %}
-                        <a href="{{ url_for('close_poll', poll_id=poll.id) }}"
-                            class="btn-small btn-danger" onclick="return confirm('この投票を締め切りますか？')">締切</a>
+                        <a href="{{ url_for('close_poll', poll_id=poll.id) }}" class="btn-small btn-danger"
+                            onclick="return confirm('この投票を締め切りますか？')">締切</a>
                         {% endif %}
                     </td>
                 </tr>
