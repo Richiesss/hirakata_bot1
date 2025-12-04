@@ -1,200 +1,115 @@
 # 枚方市民ニーズ抽出ハイブリッドシステム
 
 LINE公式アカウントとローカルLLM（Ollama）を活用した市民ニーズ収集・分析システムです。
+市民との対話を通じて意見を収集し、AIによる分析・可視化を行うことで、市政への反映を支援します。
 
 ## 主な機能
 
-- **AI対話型意見収集**: LLMとの対話で市民の意見・ニーズを引き出し
-- **自由記述アンケート**: フォームからの意見投稿（準備中）
-- **選択式アンケート**: プッシュ通知による簡単投票（準備中）
+### 📱 市民向け機能 (LINE Bot)
+- **AI対話型意見収集**: LLMとの自然な対話で市民の意見・ニーズを深掘り
+- **自由記述アンケート**: メニューからの手軽な意見投稿
+- **選択式アンケート**: プッシュ通知による投票機能
 - **ポイントシステム**: 参加インセンティブとしてポイント付与
-- **AI分析**: 意見の自動分類、クラスタリング、優先順位付け（準備中）
-- **管理者ダッシュボード**: 収集した意見の可視化・分析（準備中）
+- **ユーザー登録**: 年代、居住区などの属性登録
+
+### 💻 管理者向け機能 (Webダッシュボード)
+- **ダッシュボード**: 収集した意見の統計、日別推移、カテゴリ分布の可視化
+- **意見管理**: 意見の検索、フィルタリング、優先度・感情スコアの確認
+- **AI分析**:
+    - **クラスタリング**: 類似意見のグループ化と要約
+    - **レポート出力**: 分析結果や運用状況のPDFレポート生成
+- **アンケート管理**: 新規投票の作成、配信、結果確認
+- **ユーザー管理**: 登録ユーザー一覧、ポイント付与
+- **レスポンシブ対応**: スマホ・タブレットでの閲覧に対応
 
 ## 技術スタック
 
-- **バックエンド**: Python 3.9+, Flask
+- **バックエンド**: Python 3.10+, Flask
 - **LINE Bot**: LINE Messaging API SDK v3
 - **LLM**: Ollama (llama3.2)
-- **データベース**: PostgreSQL
+- **データベース**: PostgreSQL (本番) / SQLite (開発)
 - **ORM**: SQLAlchemy
+- **コンテナ**: Docker, Docker Compose
+- **サーバー**: Gunicorn, Nginx (想定)
+- **PDF生成**: ReportLab
 
-## クイックスタート
+## クイックスタート (Docker推奨)
 
 ### 1. 前提条件
-
-- Python 3.9以上
-- PostgreSQL 12以上
-- Ollama（RTX4090等のGPU推奨）
-- LINE Developersアカウント
+- Docker & Docker Compose
+- LINE Developersアカウント (Channel Secret, Access Token)
 
 ### 2. セットアップ
+`.env.production` ファイルを作成し、必要な環境変数を設定します。
 
 ```bash
-# リポジトリをクローン
-cd hirakata_bot1
-
-# セットアップスクリプトを実行
-chmod +x setup.sh start.sh
-./setup.sh
+LINE_CHANNEL_SECRET=your_channel_secret
+LINE_CHANNEL_ACCESS_TOKEN=your_access_token
+DATABASE_URL=postgresql://user:password@db:5432/hirakata_bot
+ADMIN_PASSWORD=admin123
 ```
 
-### 3. 環境変数の設定
-
-`.env`ファイルを編集してLINE認証情報を設定:
+### 3. 起動
 
 ```bash
-LINE_CHANNEL_SECRET=your_channel_secret_here
-LINE_CHANNEL_ACCESS_TOKEN=your_access_token_here
-DATABASE_URL=postgresql://user:password@localhost:5432/hirakata_bot
+docker-compose up -d --build
 ```
 
-### 4. PostgreSQLデータベースのセットアップ
-
-```bash
-# データベース作成
-createdb hirakata_bot
-
-# テーブル初期化
-source venv/bin/activate
-python -c 'from database.db_manager import init_db; init_db()'
-```
-
-または、SQLファイルから直接作成:
-
-```bash
-psql -d hirakata_bot -f database/schema.sql
-```
-
-### 5. Ollamaの起動
-
-別ターミナルで:
-
-```bash
-ollama serve
-ollama pull llama3.2
-```
-
-### 6. アプリケーションの起動
-
-```bash
-./start.sh
-```
-
-### 7. Webhookの設定
-
-ngrokで公開URL取得:
-
-```bash
-ngrok http 5000
-```
-
-LINE Developers ConsoleでWebhook URLを設定:
-
-```
-https://your-ngrok-url.ngrok-free.app/callback
-```
-
-## 使い方
-
-### ユーザー（市民）側
-
-1. LINE公式アカウントを友だち追加
-2. メッセージを送信すると、AIが質問を返して意見を引き出します
-3. 数ターンの対話後、意見が要約されてポイント付与
-
-### コマンド
-
-- `/help` - ヘルプ表示
-- `/reset` - 対話履歴をリセット
-- `/point` - 累積ポイント確認
+### 4. アクセス
+- **LINE Bot**: LINEアプリから友だち追加して利用
+- **管理画面**: `http://localhost:8081/admin/login`
+    - 初期アカウント: `admin` / `admin123`
 
 ## プロジェクト構造
 
 ```
 hirakata_bot1/
-├── app.py                  # メインアプリケーション
-├── config.py               # 設定管理
-├── ollama_client.py        # LLMクライアント
-├── requirements.txt        # 依存パッケージ
-├── setup.sh               # セットアップスクリプト
-├── start.sh               # 起動スクリプト
-├── database/
-│   ├── schema.sql         # データベーススキーマ
-│   ├── db_manager.py      # ORM定義・DB操作
-│   └── __init__.py
-├── handlers/
-│   ├── message_handler.py # メッセージ処理
-│   ├── command_handler.py # コマンド処理
-│   ├── follow_handler.py  # 友だち追加処理
-│   ├── postback_handler.py# ポストバック処理
-│   └── __init__.py
-├── features/
-│   ├── chat_opinion.py    # 対話型意見収集
-│   └── __init__.py
-├── ai/                    # AI分析（準備中）
-├── admin/                 # 管理画面（準備中）
-├── security/              # セキュリティ（準備中）
-├── scripts/               # 運用スクリプト
-└── tests/                 # テストコード
+├── app.py                  # LINE Bot アプリケーション
+├── admin/                  # 管理画面アプリケーション
+│   ├── admin_app.py        # 管理画面バックエンド
+│   ├── templates/          # HTMLテンプレート
+│   └── static/             # CSS, JS, フォント
+├── ai/                     # AI分析モジュール
+│   ├── analyzer.py         # 分析ロジック
+│   └── sentiment.py        # 感情分析
+├── database/               # データベース関連
+│   ├── models.py           # データモデル
+│   └── db_manager.py       # DB操作
+├── handlers/               # LINE Bot ハンドラー
+├── scripts/                # 運用・セットアップスクリプト
+│   ├── reset_db.py         # DB初期化
+│   ├── seed_admin.py       # 管理者作成
+│   └── backup_db.sh        # バックアップ
+├── docker-compose.yml      # コンテナ構成
+└── requirements.txt        # 依存パッケージ
 ```
 
-## 現在の実装状況（v1.0基本実装）
+## 現在の実装状況
 
-✅ **完了**
-- データベース設計・ORM実装
-- LINE Bot基盤（Webhook、イベントルーティング）
-- Ollama統合（対話・要約・分類モード）
-- 対話型意見収集機能（UC-001～UC-005）
-- ユーザー登録・ポイント管理
-- コマンド機能（/help, /reset, /point）
+✅ **実装完了**
+- LINE Bot 基本機能 (対話、登録、ポイント)
+- 管理画面 (ダッシュボード、意見一覧、ユーザー管理)
+- アンケート機能 (作成、配信、集計)
+- AI分析機能 (クラスタリング、要約)
+- PDFレポート出力 (分析レポート、運用レポート)
+- レスポンシブデザイン
+- Docker環境構築
 
-🚧 **準備中**
-- 自由記述アンケート
-- 選択式アンケート
-- AI分析機能（分類、クラスタリング）
-- 管理者ダッシュボード
-- セキュリティ強化（ハッシュ化、レート制限）
+## 運用・保守
 
-## カスタマイズ
-
-`config.py`でシステムプロンプトや各種設定を変更できます:
-
-- `SYSTEM_PROMPT_CHAT`: 対話モードのプロンプト
-- `SYSTEM_PROMPT_SUMMARY`: 要約モードのプロンプト
-- `MAX_CHAT_TURNS`: 対話の最大ターン数
-- `POINT_CHAT_OPINION`: 対話完了時のポイント
-
-## トラブルシューティング
-
-### Ollamaに接続できない
-
+### バックアップ
 ```bash
-# Ollamaサービスが起動しているか確認
-curl http://localhost:11434/api/tags
-
-# モデルがダウンロードされているか確認
-ollama list
+./scripts/backup_db.sh
 ```
 
-### データベース接続エラー
-
+### データベースリセット (注意: データが消えます)
 ```bash
-# PostgreSQLが起動しているか確認
-pg_isready
-
-# データベースが存在するか確認
-psql -l | grep hirakata_bot
+python scripts/reset_db.py
+python scripts/seed_admin.py
 ```
 
 ## ライセンス
-
 MIT License
 
 ## お問い合わせ
-
 枚方市デジタル推進課
-
----
-
-**注意**: 本システムは要件定義書に基づき段階的に開発中です。現在は基本機能（対話型意見収集）のみ実装されています。
