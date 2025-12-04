@@ -8,7 +8,7 @@
 
     <!-- サマリーカード -->
     <div class="summary-cards">
-        <div class="card" class="card-primary">
+        <div class="card card-primary">
             <h3>総意見数</h3>
             <p class="big-number">{{ total_opinions }}</p>
             <p class="sub-text">件</p>
@@ -39,11 +39,12 @@
             <h2>カテゴリ別分布</h2>
             <div class="category-chart">
                 {% for cat in category_stats %}
+                {% set percent = (cat.count / total_opinions * 100) if total_opinions > 0 else 0 %}
                 <div class="category-item">
                     <span class="category-label">{{ cat.category or 'その他' }}</span>
                     <div class="category-bar-container">
-                        <div class="category-bar"
-                            style="width: {{ (cat.count / total_opinions * 100) if total_opinions > 0 else 0 }}%"></div>
+                        <div class="category-bar" style="width: {{ percent ~ '%' }};">
+                        </div>
                     </div>
                     <span class="category-count">{{ cat.count }}件</span>
                 </div>
@@ -76,11 +77,11 @@
         <h2>過去7日間の推移</h2>
         <div class="daily-chart">
             {% for day in daily_stats %}
+            {% set percent = (day.count / daily_stats_max * 100) if daily_stats else 0 %}
             <div class="daily-item">
                 <span class="daily-label">{{ day.date }}</span>
                 <div class="daily-bar-container">
-                    <div class="daily-bar"
-                        style="height: {{ (day.count / daily_stats_max * 100) if daily_stats else 0 }}%">
+                    <div class="daily-bar" style="height: {{ percent ~ '%' }};">
                         <span class="daily-count">{{ day.count }}</span>
                     </div>
                 </div>
