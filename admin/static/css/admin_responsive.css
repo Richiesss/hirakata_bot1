@@ -1,0 +1,86 @@
+
+/* レスポンシブ対応 (スマホ・タブレット) */
+@media (max-width: 768px) {
+    :root {
+        --sidebar-width: 0px; /* モバイルではサイドバーのスペースをなくす */
+    }
+
+    /* ハンバーガーメニュー */
+    .mobile-nav-toggle {
+        display: block;
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 1001;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* サイドバー */
+    .sidebar {
+        width: 260px;
+        transform: translateX(-100%); /* デフォルトで隠す */
+        transition: transform 0.3s ease;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    }
+
+    .sidebar.active {
+        transform: translateX(0); /* 表示 */
+    }
+
+    /* オーバーレイ */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+    }
+
+    .sidebar-overlay.active {
+        display: block;
+    }
+
+    /* メインコンテンツ */
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 15px;
+        padding-top: 70px; /* ハンバーガーメニューの分空ける */
+    }
+
+    /* グリッドレイアウト */
+    .summary-cards, .charts-row {
+        grid-template-columns: 1fr; /* 1列表示 */
+    }
+
+    /* テーブル */
+    .table-container {
+        overflow-x: auto; /* 横スクロール */
+    }
+
+    .opinions-table, .stats-table {
+        min-width: 600px; /* スクロールさせるために最小幅を設定 */
+    }
+
+    /* ログイン画面 */
+    .login-box {
+        padding: 30px 20px;
+        margin: 15px;
+    }
+}
+
+/* デスクトップではハンバーガーメニューを隠す */
+@media (min-width: 769px) {
+    .mobile-nav-toggle, .sidebar-overlay {
+        display: none;
+    }
+}

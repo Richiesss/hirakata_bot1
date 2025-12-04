@@ -8,12 +8,41 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const toggleBtn = document.querySelector('.mobile-nav-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+
+            function toggleSidebar() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            }
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', toggleSidebar);
+            }
+
+            if (overlay) {
+                overlay.addEventListener('click', toggleSidebar);
+            }
+        });
+    </script>
     {% block extra_css %}{% endblock %}
 </head>
 
 <body>
     {% if current_user.is_authenticated %}
     <div class="wrapper">
+        <!-- モバイル用ハンバーガーメニュー -->
+        <button class="mobile-nav-toggle">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <!-- サイドバーオーバーレイ -->
+        <div class="sidebar-overlay"></div>
+
         <nav class="sidebar">
             <div class="logo">
                 <h2>枚方市</h2>

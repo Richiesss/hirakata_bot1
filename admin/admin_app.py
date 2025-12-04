@@ -375,6 +375,7 @@ def run_analysis():
             opinions = db.query(Opinion).order_by(Opinion.created_at.desc()).limit(200).all() # 件数制限
             
             if not opinions:
+                session.pop('analysis_results', None)
                 flash('分析する意見データがありません。', 'warning')
                 return redirect(url_for('analysis'))
                 
@@ -385,6 +386,7 @@ def run_analysis():
             ]
         
         if not opinion_data:
+            session.pop('analysis_results', None)
             flash('有効な意見データがありません。', 'warning')
             return redirect(url_for('analysis'))
 

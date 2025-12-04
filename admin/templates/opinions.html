@@ -41,22 +41,22 @@
         <tbody>
             {% for op in opinions %}
             <tr>
-                <td>{{ op.id }}</td>
-                <td>{{ op.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                <td><span class="badge">{{ op.category or 'その他' }}</span></td>
-                <td class="opinion-content">{{ op.content }}</td>
-                <td>
+                <td data-label="ID">{{ op.id }}</td>
+                <td data-label="日時">{{ op.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td data-label="カテゴリ"><span class="badge">{{ op.category or 'その他' }}</span></td>
+                <td data-label="内容" class="opinion-content">{{ op.content }}</td>
+                <td data-label="ソース">
                     {% if op.source_type == 'chat' %}💬 対話
                     {% elif op.source_type == 'free_form' %}📝 記述
                     {% elif op.source_type == 'poll' %}📊 投票
                     {% endif %}
                 </td>
-                <td>
+                <td data-label="感情スコア">
                     <span class="emotion-score score-{{ (op.emotion_score // 3) if op.emotion_score else 0 }}">
                         {{ op.emotion_score if op.emotion_score else '-' }}
                     </span>
                 </td>
-                <td>
+                <td data-label="優先度">
                     {% if op.priority_score %}
                     {{ "%.2f"|format(op.priority_score) }}
                     {% else %}
