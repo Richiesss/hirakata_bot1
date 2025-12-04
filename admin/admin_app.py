@@ -478,63 +478,191 @@ def grant_points(user_id):
 @app.route('/admin/export/report')
 @login_required
 def export_report():
-    """Excelレポート出力"""
+    """システム運用レポートをPDFで出力"""
     from database.db_manager import Poll, PollResponse
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import A4
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    from reportlab.lib.units import mm
     
     try:
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            with get_db() as db:
-                # 1. 意見データ
-                opinions = db.query(Opinion).order_by(Opinion.created_at.desc()).all()
-                op_data = [{
-                    'ID': op.id,
-                    '日時': op.created_at,
-                    'カテゴリ': op.category,
-                    '内容': op.content,
-                    '優先度': op.priority_score,
-                    '感情': op.emotion_score
-                } for op in opinions]
-                pd.DataFrame(op_data).to_excel(writer, sheet_name='意見一覧', index=False)
+        # フォント登録
+        font_path = os.path.join(app.static_folder, 'fonts', 'ipaexg.ttf')
+        if os.path.exists(font_path):
+            pdfmetrics.registerFont(TTFont('IPAexGothic', font_path))
+            font_name = 'IPAexGothic'
+        else:
+            font_name = 'HeiseiKakuGo-W5' # フォールバック
+
+        buffer = io.BytesIO()
+        c = canvas.Canvas(buffer, pagesize=A4)
+        width, height = A4
+        
+        with get_db() as db:
+            # データ取得
+            total_opinions = db.query(Opinion).count()
+            total_users = db.query(User).count()
+            total_polls = db.query(Poll).count()
+            recent_opinions = db.query(Opinion).order_by(Opinion.created_at.desc()).limit(20).all()
+            polls = db.query(Poll).order_by(Poll.created_at.desc()).limit(10).all()
+
+            # --- 1ページ目: 表紙・サマリー ---
+            c.setFont(font_name, 24)
+            c.drawCentredString(width/2, height - 30*mm, "枚方市 市民の声システム 運用レポート")
+            
+            c.setFont(font_name, 12)
+            c.drawCentredString(width/2, height - 45*mm, f"作成日: {datetime.now().strftime('%Y年%m月%d日')}")
+            
+            # 統計サマリー
+            y = height - 70*mm
+            c.setFont(font_name, 16)
+            c.drawString(20*mm, y, "1. システム利用状況")
+            y -= 15*mm
+            
+            c.setFont(font_name, 12)
+            c.drawString(30*mm, y, f"・総意見数: {total_opinions}件")
+            c.drawString(30*mm, y - 10*mm, f"・登録ユーザー数: {total_users}人")
+            c.drawString(30*mm, y - 20*mm, f"・作成アンケート数: {total_polls}件")
+            y -= 40*mm
+            
+            # アンケート状況
+            c.setFont(font_name, 16)
+            c.drawString(20*mm, y, "2. アンケート実施状況 (最新10件)")
+            y -= 15*mm
+            
+            c.setFont(font_name, 10)
+            for p in polls:
+                resp_count = db.query(PollResponse).filter(PollResponse.poll_id == p.id).count()
+                status_map = {'draft': '下書き', 'published': '公開中', 'closed': '終了'}
+                status = status_map.get(p.status, p.status)
                 
-                # 2. ユーザー統計
-                users = db.query(User).all()
-                user_data = [{
-                    'ID': u.id,
-                    '登録日': u.created_at,
-                    'ポイント': u.total_points,
-                    '年代': u.age_range,
-                    '地域': u.district
-                } for u in users]
-                pd.DataFrame(user_data).to_excel(writer, sheet_name='ユーザー一覧', index=False)
+                text = f"[{status}] {p.title[:30]}... (回答: {resp_count}件)"
+                c.drawString(30*mm, y, text)
+                y -= 8*mm
+            
+            # --- 2ページ目: 最新の意見 ---
+            c.showPage()
+            c.setFont(font_name, 16)
+            c.drawString(20*mm, height - 30*mm, "3. 最新の意見 (20件)")
+            
+            y = height - 50*mm
+            c.setFont(font_name, 10)
+            
+            for op in recent_opinions:
+                if y < 30*mm:
+                    c.showPage()
+                    y = height - 30*mm
+                    c.setFont(font_name, 10)
                 
-                # 3. 投票結果サマリ
-                polls = db.query(Poll).all()
-                poll_data = []
-                for p in polls:
-                    resp_count = db.query(PollResponse).filter(PollResponse.poll_id == p.id).count()
-                    poll_data.append({
-                        'ID': p.id,
-                        'タイトル': p.title,
-                        'ステータス': p.status,
-                        '回答数': resp_count,
-                        '作成日': p.created_at
-                    })
-                pd.DataFrame(poll_data).to_excel(writer, sheet_name='投票サマリ', index=False)
+                date_str = op.created_at.strftime('%m/%d %H:%M')
+                content = op.content[:40] + "..." if len(op.content) > 40 else op.content
+                cat = op.category or "その他"
                 
-        output.seek(0)
+                c.drawString(20*mm, y, f"{date_str} [{cat}]")
+                c.drawString(60*mm, y, content)
+                y -= 8*mm
+
+        c.save()
+        buffer.seek(0)
         
         return send_file(
-            output,
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            buffer,
             as_attachment=True,
-            download_name=f'report_{datetime.now().strftime("%Y%m%d")}.xlsx'
+            download_name=f"system_report_{datetime.now().strftime('%Y%m%d')}.pdf",
+            mimetype='application/pdf'
         )
         
     except Exception as e:
         flash(f'レポート生成エラー: {str(e)}', 'error')
         return redirect(url_for('dashboard'))
 
+
+
+@app.route('/admin/analysis/export_pdf')
+@login_required
+def export_pdf():
+    """分析レポートをPDFで出力"""
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import A4
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    from reportlab.lib.units import mm
+    
+    # セッションから分析結果を取得
+    results = session.get('analysis_results')
+    if not results:
+        flash('分析結果がありません。先に分析を実行してください。', 'warning')
+        return redirect(url_for('analysis'))
+    
+    # フォント登録
+    font_path = os.path.join(app.static_folder, 'fonts', 'ipaexg.ttf')
+    if os.path.exists(font_path):
+        pdfmetrics.registerFont(TTFont('IPAexGothic', font_path))
+        font_name = 'IPAexGothic'
+    else:
+        font_name = 'HeiseiKakuGo-W5' # フォールバック
+    
+    # バッファ作成
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    
+    # --- 1ページ目: 表紙 ---
+    c.setFont(font_name, 24)
+    c.drawCentredString(width/2, height - 100*mm, "枚方市 市民の声分析レポート")
+    
+    c.setFont(font_name, 12)
+    c.drawCentredString(width/2, height - 120*mm, f"作成日: {datetime.now().strftime('%Y年%m月%d日')}")
+    c.drawCentredString(width/2, height - 130*mm, f"分析対象数: {results.get('total', 0)}件")
+    
+    c.showPage()
+    
+    # --- 2ページ目: 分析結果 ---
+    c.setFont(font_name, 16)
+    c.drawString(20*mm, height - 30*mm, "1. 分析結果サマリー")
+    
+    y = height - 50*mm
+    c.setFont(font_name, 10)
+    
+    # クラスタ情報
+    clusters = results.get('clusters', {})
+    for label, cluster in clusters.items():
+        if y < 50*mm: # 改ページ判定
+            c.showPage()
+            y = height - 30*mm
+            c.setFont(font_name, 10)
+            
+        c.setFont(font_name, 12)
+        c.drawString(25*mm, y, f"■ グループ {label} ({cluster.get('count', 0)}件)")
+        y -= 10*mm
+        
+        c.setFont(font_name, 10)
+        # 代表意見（長い場合はカット）
+        rep_text = cluster.get('representative', '')
+        if len(rep_text) > 40:
+            rep_text = rep_text[:40] + "..."
+        c.drawString(30*mm, y, f"代表意見: {rep_text}")
+        y -= 8*mm
+        
+        # 含まれる意見（上位3件）
+        for text in cluster.get('texts', [])[:3]:
+            if len(text) > 50:
+                text = text[:50] + "..."
+            c.drawString(35*mm, y, f"- {text}")
+            y -= 6*mm
+            
+        y -= 10*mm # グループ間のスペース
+
+    c.save()
+    buffer.seek(0)
+    
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=f"analysis_report_{datetime.now().strftime('%Y%m%d')}.pdf",
+        mimetype='application/pdf'
+    )
 
 if __name__ == '__main__':
     # 初回起動時に管理者ユーザーを作成

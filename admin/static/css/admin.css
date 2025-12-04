@@ -288,6 +288,18 @@ body {
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
+.btn-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.btn-secondary:hover {
+    background: linear-gradient(135deg, #5a6268 0%, #343a40 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
 /* ログイン画面 */
 .login-container {
     display: flex;

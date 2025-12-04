@@ -6,11 +6,26 @@
 <div class="dashboard">
     <div class="header-actions">
         <h1>🤖 AI分析ダッシュボード</h1>
-        <form action="{{ url_for('run_analysis') }}" method="post" style="display: inline;">
-            <button type="submit" class="btn btn-primary" id="analyze-btn">
-                <i class="fas fa-sync"></i> 分析を実行
-            </button>
-        </form>
+        <div class="action-buttons" style="display: flex; gap: 10px; align-items: center;">
+            <form action="{{ url_for('run_analysis') }}" method="post"
+                style="display: inline-flex; align-items: center; gap: 10px;">
+                <select name="analysis_scope" class="form-control" style="width: auto;">
+                    <option value="recent_200">最新200件 (デフォルト)</option>
+                    <option value="recent_1000">最新1000件</option>
+                    <option value="imported">インポートデータのみ</option>
+                    <option value="all">全データ (時間がかかります)</option>
+                </select>
+                <button type="submit" class="btn btn-primary" id="analyze-btn">
+                    <i class="fas fa-sync"></i> 分析を実行
+                </button>
+            </form>
+
+            {% if results %}
+            <a href="{{ url_for('export_pdf') }}" class="btn btn-secondary" target="_blank">
+                <i class="fas fa-file-pdf"></i> PDFレポート出力
+            </a>
+            {% endif %}
+        </div>
     </div>
 
     {% if not results %}
