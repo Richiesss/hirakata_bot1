@@ -112,4 +112,4 @@ python scripts/seed_admin.py
 MIT License
 
 ## お問い合わせ
-枚方市デジタル推進課
+大阪工業大学 情報科学部 データサイエンス学科 分散情報処理研究室
