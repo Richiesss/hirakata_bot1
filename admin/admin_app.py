@@ -12,6 +12,7 @@ import pandas as pd
 import io
 import base64
 import uuid
+import json
 
 from database.db_manager import get_db, Opinion, User, ChatSession, PointsHistory, AdminUser
 from admin.auth import verify_password, create_admin_user
@@ -359,8 +360,20 @@ def poll_results(poll_id):
 @login_required
 def analysis():
     """AI分析ダッシュボード"""
-    # セッションに保存された結果があれば表示
-    results = session.get('analysis_results')
+    # セッションに保存された結果ファイル名を取得
+    results_file = session.get('analysis_results_file')
+    results = None
+
+    if results_file:
+        results_path = os.path.join(app.static_folder, 'tmp', results_file)
+        if os.path.exists(results_path):
+            try:
+                with open(results_path, 'r', encoding='utf-8') as f:
+                    results = json.load(f)
+            except Exception as e:
+                app.logger.error(f"Failed to load analysis results: {e}")
+                session.pop('analysis_results_file', None)
+
     return render_template('analysis.html', results=results)
 
 @app.route('/admin/analysis/run', methods=['POST'])
@@ -368,63 +381,72 @@ def analysis():
 def run_analysis():
     """分析を実行"""
     from features.ai_analysis import get_analyzer
-    
+
     try:
         # 意見データを取得
         with get_db() as db:
             opinions = db.query(Opinion).order_by(Opinion.created_at.desc()).limit(200).all() # 件数制限
-            
+
             if not opinions:
-                session.pop('analysis_results', None)
+                session.pop('analysis_results_file', None)
                 flash('分析する意見データがありません。', 'warning')
                 return redirect(url_for('analysis'))
-                
+
             opinion_data = [
                 {"id": op.id, "text": op.content}
                 for op in opinions
                 if len(op.content) > 5 # 短すぎる意見は除外
             ]
-        
+
         if not opinion_data:
-            session.pop('analysis_results', None)
+            session.pop('analysis_results_file', None)
             flash('有効な意見データがありません。', 'warning')
             return redirect(url_for('analysis'))
 
         # 分析実行
         analyzer = get_analyzer()
         results = analyzer.analyze_opinions(opinion_data)
-        
+
         if "error" in results:
             flash(f'分析エラー: {results["error"]}', 'error')
         else:
-            # プロット画像をファイルとして保存（セッション容量対策）
+            # プロット画像をファイルとして保存
             try:
                 img_data = base64.b64decode(results['plot_image'])
-                filename = f"analysis_{uuid.uuid4().hex}.png"
-                filepath = os.path.join(app.static_folder, 'tmp', filename)
-                
+                base_uuid = uuid.uuid4().hex
+                img_filename = f"analysis_{base_uuid}.png"
+                img_filepath = os.path.join(app.static_folder, 'tmp', img_filename)
+
                 # tmpディレクトリがない場合は作成
-                os.makedirs(os.path.dirname(filepath), exist_ok=True)
-                
-                with open(filepath, 'wb') as f:
+                os.makedirs(os.path.dirname(img_filepath), exist_ok=True)
+
+                with open(img_filepath, 'wb') as f:
                     f.write(img_data)
-                
-                # セッションにはファイル名のみ保存
-                results['plot_image_file'] = filename
+
+                # 分析結果をJSONファイルとして保存（Gunicornワーカー間で共有）
+                results['plot_image_file'] = img_filename
                 del results['plot_image'] # Base64データは削除
-                
-                session['analysis_results'] = results
+
+                results_filename = f"analysis_{base_uuid}.json"
+                results_filepath = os.path.join(app.static_folder, 'tmp', results_filename)
+
+                with open(results_filepath, 'w', encoding='utf-8') as f:
+                    json.dump(results, f, ensure_ascii=False, indent=2)
+
+                # セッションにはファイル名のみ保存
+                session['analysis_results_file'] = results_filename
                 flash('分析が完了しました。', 'success')
+
+                app.logger.info(f"Analysis completed: {results_filename}")
+
             except Exception as e:
-                flash(f'画像保存エラー: {str(e)}', 'error')
-                # 画像なしでも結果は表示する
-                if 'plot_image' in results:
-                    del results['plot_image']
-                session['analysis_results'] = results
-            
+                app.logger.error(f"Failed to save analysis results: {e}")
+                flash(f'結果保存エラー: {str(e)}', 'error')
+
     except Exception as e:
+        app.logger.error(f"Analysis error: {e}")
         flash(f'システムエラー: {str(e)}', 'error')
-        
+
     return redirect(url_for('analysis'))
 
 
@@ -612,9 +634,20 @@ def export_pdf():
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
     from reportlab.lib.units import mm
-    
-    # セッションから分析結果を取得
-    results = session.get('analysis_results')
+
+    # セッションから分析結果ファイル名を取得
+    results_file = session.get('analysis_results_file')
+    results = None
+
+    if results_file:
+        results_path = os.path.join(app.static_folder, 'tmp', results_file)
+        if os.path.exists(results_path):
+            try:
+                with open(results_path, 'r', encoding='utf-8') as f:
+                    results = json.load(f)
+            except Exception as e:
+                app.logger.error(f"Failed to load analysis results for PDF: {e}")
+
     if not results:
         flash('分析結果がありません。先に分析を実行してください。', 'warning')
         return redirect(url_for('analysis'))
