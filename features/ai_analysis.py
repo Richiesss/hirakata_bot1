@@ -63,7 +63,7 @@ class OpinionAnalyzer:
             logger.error(f"Failed to load model: {e}")
             raise
 
-    def compute_embeddings(self, texts: List[str], batch_size: int = 32, progress_callback=None) -> np.ndarray:
+    def compute_embeddings(self, texts: List[str], batch_size: int = 8, progress_callback=None) -> np.ndarray:
         """
         テキストリストから埋め込みベクトルを計算
         """
@@ -191,6 +191,9 @@ class OpinionAnalyzer:
         
         if progress_callback:
             progress_callback(100, "完了しました！")
+            
+        # メモリ解放
+        self._release_model()
         
         return {
             "clusters": clusters,
@@ -198,6 +201,22 @@ class OpinionAnalyzer:
             "plot_image": plot_image,
             "total": len(texts)
         }
+
+    def _release_model(self):
+        """モデルをメモリから解放する"""
+        if self.model is not None:
+            logger.info("Releasing model from memory...")
+            del self.model
+            del self.tokenizer
+            self.model = None
+            self.tokenizer = None
+            
+            if PYTORCH_AVAILABLE and torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            
+            import gc
+            gc.collect()
+            logger.info("Model released")
 
     def _generate_plot(self, data: List[Dict], n_clusters: int) -> str:
         """
