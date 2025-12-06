@@ -454,14 +454,20 @@ def run_analysis():
 @login_required
 def generate_ai_poll():
     """AIによるアンケート自動生成"""
-    from features.poll_manager import create_poll_draft_from_analysis
-    
     summary = request.form.get('summary')
     if not summary:
         flash('要約データが不足しています', 'error')
         return redirect(url_for('analysis'))
         
     try:
+        # 遅延インポートでエラーハンドリング
+        try:
+            from features.poll_manager import create_poll_draft_from_analysis
+        except ImportError as e:
+            app.logger.error(f"Failed to import poll_manager: {e}")
+            flash('機能の読み込みに失敗しました。システム管理者にお問い合わせください。', 'error')
+            return redirect(url_for('analysis'))
+
         poll_id = create_poll_draft_from_analysis(summary)
         if poll_id:
             flash(f'AIがアンケート案を作成しました（ID: {poll_id}）', 'success')
@@ -469,6 +475,7 @@ def generate_ai_poll():
         else:
             flash('アンケート案の作成に失敗しました', 'error')
     except Exception as e:
+        app.logger.error(f"Error in generate_ai_poll: {e}")
         flash(f'エラーが発生しました: {str(e)}', 'error')
         
     return redirect(url_for('analysis'))

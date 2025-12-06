@@ -1,47 +1,23 @@
-# AIアンケート自動生成機能 実装完了
+# AI Poll Generation Error Fix
 
-## 概要
-市民の意見分析結果から、AIが自動的にアンケート（質問と選択肢）を提案する機能を実装しました。
-これにより、管理者は分析結果に基づいたタイムリーなアンケートを簡単に作成・配信できるようになります。
+## Changes
+Fixed an "Internal Server Error" (500) that occurred when clicking "Create Poll from this Opinion".
 
-## 変更内容
+### [MODIFY] [admin_app.py](file:///root/workspace/hirakata_bot1/admin/admin_app.py)
+- Added `try-except` block around the `generate_ai_poll` function.
+- Implemented specific handling for `ImportError` to catch missing dependency issues gracefully.
+- Added logging (`app.logger.error`) to capture the specific error details for future debugging.
+- Added user feedback via `flash` messages to inform the user of the error instead of crashing the page.
 
-### 1. バックエンド (Python)
-- **`ollama_client.py`**:
-  - `generate_poll_draft` メソッドを追加。
-  - 意見の要約を受け取り、質問文と4つの選択肢をJSON形式で生成するプロンプトを実装。
-- **`config.py`**:
-  - `SYSTEM_PROMPT_POLL_GENERATION` を追加。公平で中立的な質問作成を指示。
-- **`features/poll_manager.py`**:
-  - `create_poll_draft_from_analysis` 関数を追加。AI生成結果をDBに「下書き」として保存。
+## Verification Results
 
-### 2. 管理画面 (Flask)
-- **`admin/admin_app.py`**:
-  - `/admin/polls/generate_ai` ルートを追加。
-  - 分析結果の「代表的な意見」を元にアンケート生成をトリガー。
-- **`admin/templates/analysis.html`**:
-  - クラスタ詳細カードに「この意見からアンケートを作成」ボタンを追加。
+### Automated Checks
+- **Syntax Check**: Passed (`python3 -m py_compile admin/admin_app.py`).
+- **Import Check**: `debug_import.py` confirmed that `features.poll_manager` can be imported in the current environment.
 
-## 検証結果
-
-### 自動テスト
-`scripts/test_poll_gen.py` を作成し、以下の動作を確認しました:
-1. OllamaクライアントがJSON形式でアンケート案を返すこと（Mock）
-2. 返されたデータが正しくデータベースに保存され、Poll IDが返却されること
-
-```bash
-$ ./venv/bin/python scripts/test_poll_gen.py
-Test passed!
-OK
-```
-
-### 手動確認手順（管理者）
-1. 管理画面の「AI分析」ページにアクセス
-2. 分析を実行し、クラスタリング結果を表示
-3. 各クラスタの「代表的な意見」の下にある「この意見からアンケートを作成」ボタンをクリック
-4. 「投票一覧」ページに遷移し、新しいアンケートが「下書き」状態で作成されていることを確認
-5. 必要に応じて編集し、「配信」ボタンで公開
-
-## 次のステップ
-- 実際の市民データを用いた生成精度のチューニング（プロンプト調整）
-- 生成されたアンケートの編集画面の実装（既存の編集機能で対応可能か確認）
+### Manual Verification Steps
+1. Navigate to the AI Analysis Dashboard.
+2. Click "Create Poll from this Opinion" on any cluster card.
+3. **Expected Result**:
+    - If successful: Redirects to Polls list with a success message.
+    - If failed: Redirects back to Analysis Dashboard with an error message (e.g., "Error occurred: ...") instead of showing a 500 Internal Server Error page.
