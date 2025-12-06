@@ -18,6 +18,7 @@ from linebot.v3.messaging import (
 
 from database.db_manager import get_db, Poll, PollOption, PollResponse, User, PollDeliveryLog
 from config import LINE_CHANNEL_ACCESS_TOKEN
+from ollama_client import get_ollama_client
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,35 @@ def create_poll(question: str, choices: List[str], description: str = None) -> i
         
         logger.info(f"Poll created: {poll.id}")
         return poll.id
+
+
+def create_poll_draft_from_analysis(opinions_summary: str) -> Optional[int]:
+    """AI分析結果からアンケートドラフトを作成
+    
+    Args:
+        opinions_summary: 意見の要約テキスト
+    
+    Returns:
+        作成された投票ID (失敗時はNone)
+    """
+    client = get_ollama_client()
+    poll_data = client.generate_poll_draft(opinions_summary)
+    
+    if not poll_data:
+        logger.error("Failed to generate poll draft")
+        return None
+        
+    try:
+        poll_id = create_poll(
+            question=poll_data["question"],
+            choices=poll_data["options"],
+            description=poll_data.get("description")
+        )
+        return poll_id
+        
+    except Exception as e:
+        logger.error(f"Error creating poll draft in DB: {e}")
+        return None
 
 
 def get_poll_flex_message(poll_id: int) -> FlexMessage:

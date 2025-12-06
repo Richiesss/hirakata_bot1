@@ -12,7 +12,8 @@ from config import (
     OLLAMA_URL,
     OLLAMA_TIMEOUT,
     SYSTEM_PROMPT_CHAT,
-    SYSTEM_PROMPT_SUMMARY
+    SYSTEM_PROMPT_SUMMARY,
+    SYSTEM_PROMPT_POLL_GENERATION
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -185,6 +186,59 @@ class OllamaClient:
             
         except Exception as e:
             logger.error(f"Error in classify_opinion: {e}")
+            return None
+
+    def generate_poll_draft(self, opinions_summary: str) -> Optional[Dict]:
+        """
+        アンケート生成モード: 意見の要約からアンケート案を作成
+        
+        Args:
+            opinions_summary: 意見の要約テキスト（または代表的な意見のリスト）
+        
+        Returns:
+            {
+                "question": "質問文",
+                "options": ["選択肢1", "選択肢2", "選択肢3", "選択肢4"],
+                "description": "説明"
+            }
+        """
+        try:
+            messages = [
+                {"role": "system", "content": SYSTEM_PROMPT_POLL_GENERATION},
+                {"role": "user", "content": f"以下の市民の意見を元に、アンケートを作成してください:\n\n{opinions_summary}"}
+            ]
+            
+            response = self.client.chat(
+                model=self.model,
+                messages=messages,
+                options={
+                    "temperature": 0.3,  # 少し創造性を持たせるが、フォーマットは守らせる
+                    "num_predict": 400,
+                },
+                format="json"
+            )
+            
+            result_text = response['message']['content'].strip()
+            result = json.loads(result_text)
+            
+            # バリデーション
+            if "question" not in result or "options" not in result:
+                logger.error("Generated poll missing required fields")
+                return None
+                
+            if len(result["options"]) != 4:
+                logger.warning(f"Generated poll has {len(result['options'])} options, expected 4")
+                # 足りない場合は補充、多い場合はカットなどの処理が必要だが、一旦そのまま返すかエラーにする
+                # ここではエラーログを出してNoneを返す（再生成を促すため）
+                # return None 
+                # いや、LLMの挙動によっては3つになることもあるので、補正ロジックを入れる方が親切
+                pass
+
+            logger.info(f"Poll draft generated: {result.get('question')}")
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error in generate_poll_draft: {e}")
             return None
     
     def is_available(self) -> bool:

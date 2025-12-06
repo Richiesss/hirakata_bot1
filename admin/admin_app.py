@@ -428,6 +428,30 @@ def run_analysis():
     return redirect(url_for('analysis'))
 
 
+@app.route('/admin/polls/generate_ai', methods=['POST'])
+@login_required
+def generate_ai_poll():
+    """AIによるアンケート自動生成"""
+    from features.poll_manager import create_poll_draft_from_analysis
+    
+    summary = request.form.get('summary')
+    if not summary:
+        flash('要約データが不足しています', 'error')
+        return redirect(url_for('analysis'))
+        
+    try:
+        poll_id = create_poll_draft_from_analysis(summary)
+        if poll_id:
+            flash(f'AIがアンケート案を作成しました（ID: {poll_id}）', 'success')
+            return redirect(url_for('polls'))
+        else:
+            flash('アンケート案の作成に失敗しました', 'error')
+    except Exception as e:
+        flash(f'エラーが発生しました: {str(e)}', 'error')
+        
+    return redirect(url_for('analysis'))
+
+
 @app.route('/admin/polls/<int:poll_id>/close')
 @login_required  
 def close_poll(poll_id):

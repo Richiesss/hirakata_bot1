@@ -74,6 +74,15 @@
                     <h4>代表的な意見:</h4>
                     <p class="representative-text">"{{ cluster.representative }}"</p>
 
+                    <div style="margin: 10px 0;">
+                        <form action="{{ url_for('generate_ai_poll') }}" method="post" style="display: inline;">
+                            <input type="hidden" name="summary" value="{{ cluster.representative }}">
+                            <button type="submit" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-poll"></i> この意見からアンケートを作成
+                            </button>
+                        </form>
+                    </div>
+
                     <details>
                         <summary>含まれる意見 (一部)</summary>
                         <ul class="opinion-list">
