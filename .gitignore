@@ -41,3 +41,7 @@ temp/
 *.jpg
 
 *.json
+
+# Flask session files
+flask_session/
+admin/flask_session/
