@@ -21,13 +21,20 @@ from config import SECRET_KEY
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Flask初期化
-app = Flask(__name__, 
+app = Flask(__name__,
             template_folder=os.path.join(BASE_DIR, 'templates'),
             static_folder=os.path.join(BASE_DIR, 'static'))
 app.config['SECRET_KEY'] = SECRET_KEY
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 # app.config['SESSION_COOKIE_SECURE'] = True # HTTPS化したら有効にする
+
+# セッションストレージをファイルベースに変更（大きなデータを保存するため）
+from flask_session import Session
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_FILE_DIR'] = os.path.join(BASE_DIR, 'flask_session')
+app.config['SESSION_PERMANENT'] = False
+Session(app)
 
 # ログ設定
 import logging
@@ -368,33 +375,53 @@ def analysis():
 def run_analysis():
     """分析を実行"""
     from features.ai_analysis import get_analyzer
-    
+
     try:
-        # 意見データを取得
+        # スコープパラメータを取得
+        analysis_scope = request.form.get('analysis_scope', 'recent_200')
+        app.logger.info(f"Starting analysis with scope: {analysis_scope}")
+
+        # スコープに応じてデータ取得条件を変更
         with get_db() as db:
-            opinions = db.query(Opinion).order_by(Opinion.created_at.desc()).limit(200).all() # 件数制限
-            
+            query = db.query(Opinion).order_by(Opinion.created_at.desc())
+
+            if analysis_scope == 'recent_200':
+                query = query.limit(200)
+            elif analysis_scope == 'recent_1000':
+                query = query.limit(1000)
+            elif analysis_scope == 'imported':
+                query = query.filter(Opinion.source_type == 'imported')
+            # 'all' の場合は制限なし
+
+            opinions = query.all()
+            app.logger.info(f"Fetched {len(opinions)} opinions for analysis")
+
             if not opinions:
                 session.pop('analysis_results', None)
                 flash('分析する意見データがありません。', 'warning')
                 return redirect(url_for('analysis'))
-                
+
             opinion_data = [
                 {"id": op.id, "text": op.content}
                 for op in opinions
                 if len(op.content) > 5 # 短すぎる意見は除外
             ]
-        
+
         if not opinion_data:
             session.pop('analysis_results', None)
             flash('有効な意見データがありません。', 'warning')
             return redirect(url_for('analysis'))
 
+        app.logger.info(f"Starting AI analysis on {len(opinion_data)} opinions")
+
         # 分析実行
         analyzer = get_analyzer()
         results = analyzer.analyze_opinions(opinion_data)
-        
+
+        app.logger.info(f"Analysis completed. Results: {list(results.keys())}")
+
         if "error" in results:
+            app.logger.error(f'Analysis error: {results["error"]}')
             flash(f'分析エラー: {results["error"]}', 'error')
         else:
             # プロット画像をファイルとして保存（セッション容量対策）
@@ -402,29 +429,33 @@ def run_analysis():
                 img_data = base64.b64decode(results['plot_image'])
                 filename = f"analysis_{uuid.uuid4().hex}.png"
                 filepath = os.path.join(app.static_folder, 'tmp', filename)
-                
+
                 # tmpディレクトリがない場合は作成
                 os.makedirs(os.path.dirname(filepath), exist_ok=True)
-                
+
                 with open(filepath, 'wb') as f:
                     f.write(img_data)
-                
+
+                app.logger.info(f"Plot image saved: {filename}")
+
                 # セッションにはファイル名のみ保存
                 results['plot_image_file'] = filename
                 del results['plot_image'] # Base64データは削除
-                
+
                 session['analysis_results'] = results
                 flash('分析が完了しました。', 'success')
             except Exception as e:
+                app.logger.error(f'Image save error: {str(e)}', exc_info=True)
                 flash(f'画像保存エラー: {str(e)}', 'error')
                 # 画像なしでも結果は表示する
                 if 'plot_image' in results:
                     del results['plot_image']
                 session['analysis_results'] = results
-            
+
     except Exception as e:
+        app.logger.error(f'System error in run_analysis: {str(e)}', exc_info=True)
         flash(f'システムエラー: {str(e)}', 'error')
-        
+
     return redirect(url_for('analysis'))
 
 
