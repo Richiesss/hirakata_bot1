@@ -15,8 +15,23 @@
                     <option value="imported">インポートデータのみ</option>
                     <option value="all">全データ (時間がかかります)</option>
                 </select>
+                <input type="hidden" name="analysis_mode" value="classic">
                 <button type="submit" class="btn btn-primary" id="analyze-btn">
-                    <i class="fas fa-sync"></i> 分析を実行
+                    <i class="fas fa-sync"></i> 分析を実行 (旧版)
+                </button>
+            </form>
+
+            <form action="{{ url_for('run_analysis') }}" method="post"
+                style="display: inline-flex; align-items: center; gap: 10px;">
+                <select name="analysis_scope" class="form-control" style="width: auto;">
+                    <option value="recent_200">最新200件 (デフォルト)</option>
+                    <option value="recent_1000">最新1000件</option>
+                    <option value="imported">インポートデータのみ</option>
+                    <option value="all">全データ (時間がかかります)</option>
+                </select>
+                <input type="hidden" name="analysis_mode" value="smart">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-brain"></i> スマート分析 (新版)
                 </button>
             </form>
 

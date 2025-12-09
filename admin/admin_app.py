@@ -368,13 +368,19 @@ def analysis():
     """AI分析ダッシュボード"""
     # セッションに保存された結果があれば表示
     results = session.get('analysis_results')
-    return render_template('analysis.html', results=results)
+
+    # 分析モードに応じてテンプレートを切り替え
+    if results and results.get('mode') == 'smart':
+        return render_template('analysis_v2.html', results=results)
+    else:
+        return render_template('analysis.html', results=results)
 
 @app.route('/admin/analysis/run', methods=['POST'])
 @login_required
 def run_analysis():
     """分析を実行"""
     from features.ai_analysis import get_analyzer
+    from features.ai_analysis_v2 import get_smart_analyzer
 
     try:
         # スコープパラメータを取得
@@ -402,7 +408,12 @@ def run_analysis():
                 return redirect(url_for('analysis'))
 
             opinion_data = [
-                {"id": op.id, "text": op.content}
+                {
+                    "id": op.id,
+                    "text": op.content,
+                    "priority_score": op.priority_score if op.priority_score else 0.5,
+                    "category": op.category if op.category else "その他"
+                }
                 for op in opinions
                 if len(op.content) > 5 # 短すぎる意見は除外
             ]
@@ -414,9 +425,19 @@ def run_analysis():
 
         app.logger.info(f"Starting AI analysis on {len(opinion_data)} opinions")
 
-        # 分析実行
-        analyzer = get_analyzer()
-        results = analyzer.analyze_opinions(opinion_data)
+        # 分析方式を選択（v2を使用）
+        analysis_mode = request.form.get('analysis_mode', 'smart')  # 'smart' or 'classic'
+
+        if analysis_mode == 'smart':
+            # 新しいLLMベース分析
+            analyzer = get_smart_analyzer()
+            results = analyzer.analyze_opinions(opinion_data)
+            results['mode'] = 'smart'
+        else:
+            # 従来のBERTクラスタリング
+            analyzer = get_analyzer()
+            results = analyzer.analyze_opinions(opinion_data)
+            results['mode'] = 'classic'
 
         app.logger.info(f"Analysis completed. Results: {list(results.keys())}")
 

@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+
+{% block title %}AI分析ダッシュボード (スマート分析){% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="header-actions">
+        <h1>🧠 AI分析ダッシュボード (スマート分析)</h1>
+        <div class="action-buttons" style="display: flex; gap: 10px; align-items: center;">
+            <form action="{{ url_for('run_analysis') }}" method="post"
+                style="display: inline-flex; align-items: center; gap: 10px;">
+                <select name="analysis_scope" class="form-control" style="width: auto;">
+                    <option value="recent_200">最新200件 (デフォルト)</option>
+                    <option value="recent_1000">最新1000件</option>
+                    <option value="imported">インポートデータのみ</option>
+                    <option value="all">全データ (時間がかかります)</option>
+                </select>
+                <input type="hidden" name="analysis_mode" value="smart">
+                <button type="submit" class="btn btn-primary" id="analyze-btn">
+                    <i class="fas fa-sync"></i> スマート分析を実行
+                </button>
+            </form>
+
+            {% if results %}
+            <a href="{{ url_for('analysis') }}" class="btn btn-secondary">
+                <i class="fas fa-chart-line"></i> 旧分析画面
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if not results %}
+    <div class="card">
+        <div class="empty-state">
+            <p>💡 スマート分析では、LLMを使って意見を自動的にトピック分類し、<br>
+            市職員の方々が直感的に理解できる形で結果を表示します。</p>
+            <p class="text-muted">「スマート分析を実行」ボタンを押して開始してください。</p>
+        </div>
+    </div>
+    {% else %}
+
+    <!-- 分析サマリー -->
+    <div class="summary-cards">
+        <div class="card card-info">
+            <h3>分析対象</h3>
+            <p class="big-number">{{ results.total }}</p>
+            <p class="sub-text">件の意見</p>
+        </div>
+        <div class="card card-success">
+            <h3>検出トピック</h3>
+            <p class="big-number">{{ results.topics|length }}</p>
+            <p class="sub-text">テーマ</p>
+        </div>
+        <div class="card card-warning">
+            <h3>緊急対応必要</h3>
+            <p class="big-number">{{ results.topics | selectattr('priority', 'equalto', 'critical') | list | length }}</p>
+            <p class="sub-text">トピック</p>
+        </div>
+    </div>
+
+    <!-- 全体サマリー -->
+    {% if results.analysis_summary %}
+    <div class="card summary-box">
+        <h2>📊 全体的な傾向</h2>
+        <p class="summary-text">{{ results.analysis_summary }}</p>
+    </div>
+    {% endif %}
+
+    <!-- トピック一覧 -->
+    <div class="card">
+        <h2>📋 トピック別分析結果</h2>
+
+        <div class="topics-container">
+            {% for topic in results.topics %}
+            <div class="topic-card priority-{{ topic.priority }}">
+                <div class="topic-header">
+                    <div class="topic-title-row">
+                        <h3 class="topic-name">
+                            {% if topic.priority == 'critical' %}🔴{% elif topic.priority == 'high' %}🟡{% elif topic.priority == 'medium' %}🟢{% else %}🔵{% endif %}
+                            {{ topic.name }}
+                        </h3>
+                        <span class="topic-count">{{ topic.count }}件</span>
+                    </div>
+                    <div class="topic-meta">
+                        <span class="badge badge-urgency-{{ topic.priority }}">
+                            {{ topic.urgency_level }}
+                        </span>
+                        <span class="badge badge-secondary">
+                            平均優先度: {{ topic.avg_priority_score }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="topic-body">
+                    <div class="topic-summary">
+                        <h4>📝 要約</h4>
+                        <p>{{ topic.summary }}</p>
+                    </div>
+
+                    {% if topic.keywords %}
+                    <div class="topic-keywords">
+                        <h4>🔑 キーワード</h4>
+                        <div class="keyword-tags">
+                            {% for keyword in topic.keywords %}
+                            <span class="keyword-tag">{{ keyword }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if topic.recommended_actions %}
+                    <div class="topic-actions">
+                        <h4>✅ 推奨アクション</h4>
+                        <ul class="action-list">
+                            {% for action in topic.recommended_actions %}
+                            <li>{{ action }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <details class="topic-details">
+                        <summary>含まれる意見を見る ({{ topic.count }}件)</summary>
+                        <ul class="opinion-list">
+                            {% for opinion in topic.opinions[:10] %}
+                            <li>
+                                <span class="opinion-id">#{{ opinion.id }}</span>
+                                <span class="opinion-text">{{ opinion.text[:80] }}{% if opinion.text|length > 80 %}...{% endif %}</span>
+                            </li>
+                            {% endfor %}
+                            {% if topic.count > 10 %}
+                            <li class="more-opinions">...他 {{ topic.count - 10 }}件</li>
+                            {% endif %}
+                        </ul>
+                    </details>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+    }
+
+    .summary-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .summary-text {
+        font-size: 1.2em;
+        line-height: 1.6;
+        margin: 10px 0 0 0;
+    }
+
+    .topics-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .topic-card {
+        border: 2px solid #ddd;
+        border-radius: 12px;
+        padding: 20px;
+        background: #ffffff;
+        transition: all 0.3s;
+    }
+
+    .topic-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .topic-card.priority-critical {
+        border-left: 6px solid #dc3545;
+        background: #fff5f5;
+    }
+
+    .topic-card.priority-high {
+        border-left: 6px solid #ffc107;
+        background: #fffef5;
+    }
+
+    .topic-card.priority-medium {
+        border-left: 6px solid #28a745;
+        background: #f5fff5;
+    }
+
+    .topic-card.priority-low {
+        border-left: 6px solid #6c757d;
+        background: #f8f9fa;
+    }
+
+    .topic-header {
+        margin-bottom: 15px;
+    }
+
+    .topic-title-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .topic-name {
+        font-size: 1.5em;
+        margin: 0;
+        color: #333;
+    }
+
+    .topic-count {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #666;
+        background: #f0f0f0;
+        padding: 5px 12px;
+        border-radius: 20px;
+    }
+
+    .topic-meta {
+        display: flex;
+        gap: 10px;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 0.9em;
+        font-weight: bold;
+    }
+
+    .badge-urgency-critical {
+        background: #dc3545;
+        color: white;
+    }
+
+    .badge-urgency-high {
+        background: #ffc107;
+        color: #333;
+    }
+
+    .badge-urgency-medium {
+        background: #28a745;
+        color: white;
+    }
+
+    .badge-urgency-low {
+        background: #6c757d;
+        color: white;
+    }
+
+    .badge-secondary {
+        background: #e0e0e0;
+        color: #333;
+    }
+
+    .topic-body {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .topic-summary {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 3px solid #667eea;
+    }
+
+    .topic-summary h4 {
+        margin: 0 0 10px 0;
+        color: #667eea;
+        font-size: 1em;
+    }
+
+    .topic-summary p {
+        margin: 0;
+        line-height: 1.6;
+        color: #333;
+    }
+
+    .topic-keywords h4,
+    .topic-actions h4 {
+        margin: 0 0 10px 0;
+        font-size: 1em;
+        color: #555;
+    }
+
+    .keyword-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .keyword-tag {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 4px 12px;
+        border-radius: 16px;
+        font-size: 0.9em;
+        font-weight: 500;
+    }
+
+    .action-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .action-list li {
+        padding: 8px 12px;
+        margin-bottom: 5px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        border-left: 3px solid #28a745;
+    }
+
+    .topic-details {
+        margin-top: 10px;
+        padding: 10px;
+        background: #f9f9f9;
+        border-radius: 8px;
+    }
+
+    .topic-details summary {
+        cursor: pointer;
+        font-weight: bold;
+        color: #667eea;
+        padding: 5px;
+    }
+
+    .topic-details summary:hover {
+        color: #764ba2;
+    }
+
+    .opinion-list {
+        list-style: none;
+        padding: 10px 0 0 0;
+        margin: 0;
+    }
+
+    .opinion-list li {
+        padding: 8px 0;
+        border-bottom: 1px dashed #e0e0e0;
+        display: flex;
+        gap: 10px;
+    }
+
+    .opinion-id {
+        color: #999;
+        font-size: 0.85em;
+        min-width: 40px;
+    }
+
+    .opinion-text {
+        flex: 1;
+        color: #555;
+        line-height: 1.4;
+    }
+
+    .more-opinions {
+        color: #999;
+        font-style: italic;
+        text-align: center;
+        border: none;
+    }
+</style>
+
+<script>
+    document.getElementById('analyze-btn').addEventListener('click', function () {
+        var btn = this;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 分析を実行中...';
+        btn.disabled = true;
+        btn.form.submit();
+    });
+</script>
+{% endblock %}
