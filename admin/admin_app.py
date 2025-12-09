@@ -445,33 +445,39 @@ def run_analysis():
             app.logger.error(f'Analysis error: {results["error"]}')
             flash(f'分析エラー: {results["error"]}', 'error')
         else:
-            # プロット画像をファイルとして保存（セッション容量対策）
-            try:
-                img_data = base64.b64decode(results['plot_image'])
-                filename = f"analysis_{uuid.uuid4().hex}.png"
-                filepath = os.path.join(app.static_folder, 'tmp', filename)
-
-                # tmpディレクトリがない場合は作成
-                os.makedirs(os.path.dirname(filepath), exist_ok=True)
-
-                with open(filepath, 'wb') as f:
-                    f.write(img_data)
-
-                app.logger.info(f"Plot image saved: {filename}")
-
-                # セッションにはファイル名のみ保存
-                results['plot_image_file'] = filename
-                del results['plot_image'] # Base64データは削除
-
+            # モードに応じて画像処理を分岐
+            if results.get('mode') == 'smart':
+                # スマート分析は画像なし、そのままセッションに保存
                 session['analysis_results'] = results
-                flash('分析が完了しました。', 'success')
-            except Exception as e:
-                app.logger.error(f'Image save error: {str(e)}', exc_info=True)
-                flash(f'画像保存エラー: {str(e)}', 'error')
-                # 画像なしでも結果は表示する
-                if 'plot_image' in results:
-                    del results['plot_image']
-                session['analysis_results'] = results
+                flash('スマート分析が完了しました。', 'success')
+            else:
+                # 旧版: プロット画像をファイルとして保存（セッション容量対策）
+                try:
+                    img_data = base64.b64decode(results['plot_image'])
+                    filename = f"analysis_{uuid.uuid4().hex}.png"
+                    filepath = os.path.join(app.static_folder, 'tmp', filename)
+
+                    # tmpディレクトリがない場合は作成
+                    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+                    with open(filepath, 'wb') as f:
+                        f.write(img_data)
+
+                    app.logger.info(f"Plot image saved: {filename}")
+
+                    # セッションにはファイル名のみ保存
+                    results['plot_image_file'] = filename
+                    del results['plot_image'] # Base64データは削除
+
+                    session['analysis_results'] = results
+                    flash('分析が完了しました。', 'success')
+                except Exception as e:
+                    app.logger.error(f'Image save error: {str(e)}', exc_info=True)
+                    flash(f'画像保存エラー: {str(e)}', 'error')
+                    # 画像なしでも結果は表示する
+                    if 'plot_image' in results:
+                        del results['plot_image']
+                    session['analysis_results'] = results
 
     except Exception as e:
         app.logger.error(f'System error in run_analysis: {str(e)}', exc_info=True)
