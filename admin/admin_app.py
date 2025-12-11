@@ -381,103 +381,117 @@ def run_analysis():
     """分析を実行"""
     from features.ai_analysis import get_analyzer
     from features.ai_analysis_v2 import get_smart_analyzer
+    from utils.analysis_lock import get_analysis_lock
+
+    # 同時実行チェック
+    lock = get_analysis_lock()
+    if lock.is_locked():
+        lock_info = lock.get_lock_info()
+        if lock_info:
+            age = int(lock_info['age_seconds'])
+            flash(f'現在、他のユーザーが分析を実行中です（実行時間: {age}秒）。しばらく待ってから再試行してください。', 'warning')
+        else:
+            flash('現在、分析処理が実行中です。しばらく待ってから再試行してください。', 'warning')
+        return redirect(url_for('analysis'))
 
     try:
-        # スコープパラメータを取得
-        analysis_scope = request.form.get('analysis_scope', 'recent_200')
-        app.logger.info(f"Starting analysis with scope: {analysis_scope}")
+        # ロックを取得
+        with lock:
+            # スコープパラメータを取得
+            analysis_scope = request.form.get('analysis_scope', 'recent_200')
+            app.logger.info(f"Starting analysis with scope: {analysis_scope}")
 
-        # スコープに応じてデータ取得条件を変更
-        with get_db() as db:
-            query = db.query(Opinion).order_by(Opinion.created_at.desc())
+            # スコープに応じてデータ取得条件を変更
+            with get_db() as db:
+                query = db.query(Opinion).order_by(Opinion.created_at.desc())
 
-            if analysis_scope == 'recent_200':
-                query = query.limit(200)
-            elif analysis_scope == 'recent_1000':
-                query = query.limit(1000)
-            elif analysis_scope == 'imported':
-                query = query.filter(Opinion.source_type == 'imported')
-            # 'all' の場合は制限なし
+                if analysis_scope == 'recent_200':
+                    query = query.limit(200)
+                elif analysis_scope == 'recent_1000':
+                    query = query.limit(1000)
+                elif analysis_scope == 'imported':
+                    query = query.filter(Opinion.source_type == 'imported')
+                # 'all' の場合は制限なし
 
-            opinions = query.all()
-            app.logger.info(f"Fetched {len(opinions)} opinions for analysis")
+                opinions = query.all()
+                app.logger.info(f"Fetched {len(opinions)} opinions for analysis")
 
-            if not opinions:
+                if not opinions:
+                    session.pop('analysis_results', None)
+                    flash('分析する意見データがありません。', 'warning')
+                    return redirect(url_for('analysis'))
+
+                opinion_data = [
+                    {
+                        "id": op.id,
+                        "text": op.content,
+                        "priority_score": op.priority_score if op.priority_score else 0.5,
+                        "category": op.category if op.category else "その他"
+                    }
+                    for op in opinions
+                    if len(op.content) > 5 # 短すぎる意見は除外
+                ]
+
+            if not opinion_data:
                 session.pop('analysis_results', None)
-                flash('分析する意見データがありません。', 'warning')
+                flash('有効な意見データがありません。', 'warning')
                 return redirect(url_for('analysis'))
 
-            opinion_data = [
-                {
-                    "id": op.id,
-                    "text": op.content,
-                    "priority_score": op.priority_score if op.priority_score else 0.5,
-                    "category": op.category if op.category else "その他"
-                }
-                for op in opinions
-                if len(op.content) > 5 # 短すぎる意見は除外
-            ]
+            app.logger.info(f"Starting AI analysis on {len(opinion_data)} opinions")
 
-        if not opinion_data:
-            session.pop('analysis_results', None)
-            flash('有効な意見データがありません。', 'warning')
-            return redirect(url_for('analysis'))
+            # 分析方式を選択（v2を使用）
+            analysis_mode = request.form.get('analysis_mode', 'smart')  # 'smart' or 'classic'
 
-        app.logger.info(f"Starting AI analysis on {len(opinion_data)} opinions")
-
-        # 分析方式を選択（v2を使用）
-        analysis_mode = request.form.get('analysis_mode', 'smart')  # 'smart' or 'classic'
-
-        if analysis_mode == 'smart':
-            # 新しいLLMベース分析
-            analyzer = get_smart_analyzer()
-            results = analyzer.analyze_opinions(opinion_data)
-            results['mode'] = 'smart'
-        else:
-            # 従来のBERTクラスタリング
-            analyzer = get_analyzer()
-            results = analyzer.analyze_opinions(opinion_data)
-            results['mode'] = 'classic'
-
-        app.logger.info(f"Analysis completed. Results: {list(results.keys())}")
-
-        if "error" in results:
-            app.logger.error(f'Analysis error: {results["error"]}')
-            flash(f'分析エラー: {results["error"]}', 'error')
-        else:
-            # モードに応じて画像処理を分岐
-            if results.get('mode') == 'smart':
-                # スマート分析は画像なし、そのままセッションに保存
-                session['analysis_results'] = results
-                flash('スマート分析が完了しました。', 'success')
+            if analysis_mode == 'smart':
+                # 新しいLLMベース分析
+                analyzer = get_smart_analyzer()
+                results = analyzer.analyze_opinions(opinion_data)
+                results['mode'] = 'smart'
             else:
-                # 旧版: プロット画像をファイルとして保存（セッション容量対策）
-                try:
-                    img_data = base64.b64decode(results['plot_image'])
-                    filename = f"analysis_{uuid.uuid4().hex}.png"
-                    filepath = os.path.join(app.static_folder, 'tmp', filename)
+                # 従来のBERTクラスタリング
+                analyzer = get_analyzer()
+                results = analyzer.analyze_opinions(opinion_data)
+                results['mode'] = 'classic'
 
-                    # tmpディレクトリがない場合は作成
-                    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+            app.logger.info(f"Analysis completed. Results: {list(results.keys())}")
 
-                    with open(filepath, 'wb') as f:
-                        f.write(img_data)
-
-                    app.logger.info(f"Plot image saved: {filename}")
-
-                    # セッションにはファイル名のみ保存
-                    results['plot_image_file'] = filename
-                    del results['plot_image'] # Base64データは削除
-
+            if "error" in results:
+                app.logger.error(f'Analysis error: {results["error"]}')
+                flash(f'分析エラー: {results["error"]}', 'error')
+            else:
+                # モードに応じて画像処理を分岐
+                if results.get('mode') == 'smart':
+                    # スマート分析は画像なし、そのままセッションに保存
                     session['analysis_results'] = results
-                    flash('分析が完了しました。', 'success')
-                except Exception as e:
-                    app.logger.error(f'Image save error: {str(e)}', exc_info=True)
-                    flash(f'画像保存エラー: {str(e)}', 'error')
-                    # 画像なしでも結果は表示する
-                    if 'plot_image' in results:
-                        del results['plot_image']
-                    session['analysis_results'] = results
+                    flash('スマート分析が完了しました。', 'success')
+                else:
+                    # 旧版: プロット画像をファイルとして保存（セッション容量対策）
+                    try:
+                        img_data = base64.b64decode(results['plot_image'])
+                        filename = f"analysis_{uuid.uuid4().hex}.png"
+                        filepath = os.path.join(app.static_folder, 'tmp', filename)
+
+                        # tmpディレクトリがない場合は作成
+                        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+                        with open(filepath, 'wb') as f:
+                            f.write(img_data)
+
+                        app.logger.info(f"Plot image saved: {filename}")
+
+                        # セッションにはファイル名のみ保存
+                        results['plot_image_file'] = filename
+                        del results['plot_image'] # Base64データは削除
+
+                        session['analysis_results'] = results
+                        flash('分析が完了しました。', 'success')
+                    except Exception as e:
+                        app.logger.error(f'Image save error: {str(e)}', exc_info=True)
+                        flash(f'画像保存エラー: {str(e)}', 'error')
+                        # 画像なしでも結果は表示する
+                        if 'plot_image' in results:
+                            del results['plot_image']
+                        session['analysis_results'] = results
 
     except Exception as e:
         app.logger.error(f'System error in run_analysis: {str(e)}', exc_info=True)

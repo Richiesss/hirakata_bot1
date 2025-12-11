@@ -17,7 +17,9 @@ OLLAMA_NUM_PARALLEL = int(os.getenv("OLLAMA_NUM_PARALLEL", "4"))
 OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", "30"))  # 秒
 
 # データベース設定
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://hirakata:hirakata@localhost:5432/hirakata_bot")
+DATABASE_URL = os.getenv(
+    "DATABASE_URL", "postgresql://hirakata:hirakata@localhost:5432/hirakata_bot"
+)
 
 # Flask設定
 FLASK_HOST = os.getenv("FLASK_HOST", "0.0.0.0")
@@ -69,5 +71,5 @@ OPINION_CATEGORIES = [
     "子育て",
     "医療",
     "防災",
-    "その他"
+    "その他",
 ]
