@@ -27,19 +27,23 @@ class OllamaClient:
         self.model = OLLAMA_MODEL
         self.base_url = OLLAMA_URL
         self.timeout = OLLAMA_TIMEOUT
-        
-        # Ollamaクライアント設定
-        self.client = ollama.Client(host=self.base_url)
-        logger.info(f"Ollama client initialized with model: {self.model}")
+
+        # Ollamaクライアント設定（タイムアウトを設定）
+        self.client = ollama.Client(
+            host=self.base_url,
+            timeout=self.timeout
+        )
+        logger.info(f"Ollama client initialized with model: {self.model}, timeout: {self.timeout}s")
     
     def chat_mode(self, user_message: str, chat_history: List[Dict[str, str]] = None) -> str:
         """
         対話モード: 市民との対話で意見を引き出す
-        
+
         Args:
-            user_message: ユーザーのメッセージ
-            chat_history: 過去の対話履歴 [{"role": "user"|"assistant", "content": "..."}]
-        
+            user_message: ユーザーのメッセージ（後方互換性のため残すが使用しない）
+            chat_history: 対話履歴（最新のユーザーメッセージを含む）
+                         [{"role": "user"|"assistant", "content": "..."}]
+
         Returns:
             LLMの応答（150文字以内の質問・傾聴）
         """
@@ -48,27 +52,40 @@ class OllamaClient:
             messages = [
                 {"role": "system", "content": SYSTEM_PROMPT_CHAT}
             ]
-            
-            # 過去の履歴を追加
+
+            # 対話履歴を追加（最新のユーザーメッセージを含む完全な履歴）
             if chat_history:
                 messages.extend(chat_history)
-            
-            # 現在のユーザーメッセージを追加
-            messages.append({"role": "user", "content": user_message})
-            
+
+            # デバッグ情報をログ出力
+            logger.info(f"Sending {len(messages)} messages to Ollama (history items: {len(chat_history) if chat_history else 0})")
+
             # Ollama呼び出し
             response = self.client.chat(
                 model=self.model,
                 messages=messages,
                 options={
                     "temperature": 0.7,  # 対話モードは創造性を持たせる
-                    "num_predict": 200,  # 最大トークン数
+                    "num_predict": 300,  # 最大トークン数（余裕を持たせる）
+                    "num_ctx": 8192,  # コンテキストウィンドウサイズ
                 }
             )
-            
+
             assistant_message = response['message']['content'].strip()
             logger.info(f"Chat mode response generated: {len(assistant_message)} chars")
-            
+
+            # 空応答の詳細ログ
+            if not assistant_message:
+                logger.error(f"Empty response detected!")
+                logger.error(f"  Raw content: '{response['message']['content']}'")
+                logger.error(f"  Done reason: {response.get('done_reason')}")
+                logger.error(f"  Eval count: {response.get('eval_count')}")
+                logger.error(f"  Total duration: {response.get('total_duration')}")
+                logger.error(f"  Message role: {response['message'].get('role')}")
+
+                # 空応答の場合でも、フォールバックメッセージを返す
+                return "申し訳ございません。もう一度お試しいただけますか？"
+
             return assistant_message
             
         except Exception as e:

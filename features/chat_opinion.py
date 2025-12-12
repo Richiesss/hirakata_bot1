@@ -35,15 +35,15 @@ def get_active_session(user_id: str) -> Optional[dict]:
     """アクティブなセッション情報を取得"""
     if user_id in _active_sessions:
         session_info = _active_sessions[user_id]
-        
-        # タイムアウトチェック
-        if datetime.now() - session_info['last_updated'] > timedelta(seconds=CHAT_SESSION_TIMEOUT):
+
+        # タイムアウトチェック（UTCで統一）
+        if datetime.utcnow() - session_info['last_updated'] > timedelta(seconds=CHAT_SESSION_TIMEOUT):
             logger.info(f"Session timeout for user {user_id}")
             del _active_sessions[user_id]
             return None
-        
+
         return session_info
-    
+
     return None
 
 
@@ -51,7 +51,7 @@ def set_active_session(user_id: str, session_id: int):
     """アクティブセッションを設定"""
     _active_sessions[user_id] = {
         'session_id': session_id,
-        'last_updated': datetime.now()
+        'last_updated': datetime.utcnow()
     }
 
 
@@ -69,11 +69,11 @@ def reset_chat_session(user_id: str):
 def handle_chat_message(user_id: str, message_text: str) -> List[TextMessage]:
     """
     対話メッセージを処理（UC-001〜UC-004）
-    
+
     Args:
         user_id: LINE User ID
         message_text: ユーザーメッセージ
-    
+
     Returns:
         応答メッセージのリスト
     """
@@ -81,15 +81,46 @@ def handle_chat_message(user_id: str, message_text: str) -> List[TextMessage]:
         with get_db() as db:
             # ユーザー取得
             user = get_or_create_user(db, user_id)
-            
-            # アクティブセッションチェック
+
+            # アクティブセッションチェック（キャッシュ）
             session_info = get_active_session(user_id)
-            
+
             if session_info:
-                # 既存セッション継続
+                # キャッシュから既存セッション取得
                 session_id = session_info['session_id']
                 session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
             else:
+                # DBから最新のアクティブセッションを取得
+                active_sessions = db.query(ChatSession).filter(
+                    ChatSession.user_id == user.id,
+                    ChatSession.status == 'active'
+                ).order_by(ChatSession.started_at.desc()).all()
+
+                # 複数のアクティブセッションがある場合、最新以外をabandonedにする
+                if len(active_sessions) > 1:
+                    logger.warning(f"Found {len(active_sessions)} active sessions for user {user.id}, cleaning up")
+                    for old_session in active_sessions[1:]:  # 最新以外
+                        old_session.status = 'abandoned'
+                        logger.info(f"Abandoned old session {old_session.id}")
+                    db.commit()
+
+                # 最新のセッションを取得
+                session = active_sessions[0] if active_sessions else None
+
+                # タイムアウトチェック
+                if session:
+                    # UTCで統一して比較
+                    if datetime.utcnow() - session.started_at > timedelta(seconds=CHAT_SESSION_TIMEOUT):
+                        logger.info(f"Session {session.id} timeout, creating new session")
+                        session.status = 'abandoned'
+                        db.commit()
+                        session = None
+                    else:
+                        # キャッシュに復元
+                        set_active_session(user_id, session.id)
+                        logger.info(f"Restored session {session.id} from DB (turn_count={session.turn_count})")
+
+            if not session:
                 # 新規セッション開始（UC-001）
                 session = ChatSession(
                     user_id=user.id,
@@ -99,25 +130,87 @@ def handle_chat_message(user_id: str, message_text: str) -> List[TextMessage]:
                 db.add(session)
                 db.commit()
                 db.refresh(session)
-                
+
                 set_active_session(user_id, session.id)
                 logger.info(f"New chat session started: {session.id} for user {user.id}")
             
-            # ユーザーメッセージを保存
+            # 終了判定を先に行う（応答生成前にチェック）
+            if session.turn_count >= MAX_CHAT_TURNS:
+                # 既に最大ターン数に達している → 要約のみ実行
+                logger.info(f"Session {session.id} reached max turns ({session.turn_count}), finalizing without response")
+
+                # ユーザーの最終メッセージをDB保存
+                user_msg = ChatMessage(
+                    session_id=session.id,
+                    role='user',
+                    content=message_text
+                )
+                db.add(user_msg)
+                db.commit()
+
+                # 要約生成（UC-004）
+                summary_result = finalize_chat_session(db, session)
+
+                if summary_result:
+                    # ポイント付与（UC-005）
+                    total_points = add_points(
+                        db,
+                        user.id,
+                        POINT_CHAT_OPINION,
+                        'chat_opinion',
+                        reference_id=summary_result['opinion_id']
+                    )
+
+                    return [
+                        TextMessage(text=f"""ご意見ありがとうございました！
+
+【あなたの意見】
+{summary_result['summary']}
+
+カテゴリ: {summary_result['category']}
+
+{POINT_CHAT_OPINION}ポイントを付与しました。
+累積ポイント: {total_points} pt
+
+引き続き、ご意見をお聞かせください。""")
+                    ]
+                else:
+                    return [
+                        TextMessage(text="ご意見ありがとうございました！")
+                    ]
+
+            # 対話継続 - 応答を生成
+            # 対話履歴取得（既存のメッセージのみ）
+            chat_history = get_chat_history(db, session.id)
+
+            # 最新のユーザーメッセージを履歴に追加
+            # （まだDBにコミットされていないが、LLMには渡す必要がある）
+            chat_history.append({"role": "user", "content": message_text})
+
+            # デバッグ: 履歴の内容をログ出力
+            logger.info(f"Chat history for session {session.id}: {len(chat_history)} items (turn {session.turn_count + 1}/{MAX_CHAT_TURNS})")
+            for i, msg in enumerate(chat_history):
+                content_preview = msg['content'][:50] if msg['content'] else '[EMPTY]'
+                logger.info(f"  [{i}] {msg['role']}: '{content_preview}...'")
+
+            # Ollama呼び出し（UC-002: 意見収集対話、UC-003: 追加質問）
+            # 完全な対話履歴（最新のユーザーメッセージを含む）を渡す
+            ollama_client = get_ollama_client()
+            assistant_response = ollama_client.chat_mode(message_text, chat_history)
+
+            # 空の応答チェック
+            if not assistant_response or not assistant_response.strip():
+                logger.error(f"Empty response from Ollama for session {session.id}")
+                return [TextMessage(text="申し訳ございません。エラーが発生しました。/resetでやり直してください。")]
+
+            # ユーザーメッセージをDB保存
             user_msg = ChatMessage(
                 session_id=session.id,
                 role='user',
                 content=message_text
             )
             db.add(user_msg)
-            
-            # 対話履歴取得
-            chat_history = get_chat_history(db, session.id)
-            
-            # Ollama呼び出し（UC-002: 意見収集対話、UC-003: 追加質問）
-            ollama_client = get_ollama_client()
-            assistant_response = ollama_client.chat_mode(message_text, chat_history)
-            
+
             # アシスタント応答を保存
             assistant_msg = ChatMessage(
                 session_id=session.id,
@@ -125,15 +218,15 @@ def handle_chat_message(user_id: str, message_text: str) -> List[TextMessage]:
                 content=assistant_response
             )
             db.add(assistant_msg)
-            
+
             # ターン数更新
             session.turn_count += 1
             db.commit()
-            
+
             # セッション更新時刻を更新
             set_active_session(user_id, session.id)
-            
-            # 終了判定
+
+            # 次回で終了かチェック
             if session.turn_count >= MAX_CHAT_TURNS:
                 # 対話終了 → 要約生成（UC-004）
                 summary_result = finalize_chat_session(db, session)
@@ -183,17 +276,19 @@ def handle_chat_message(user_id: str, message_text: str) -> List[TextMessage]:
 def get_chat_history(db, session_id: int) -> List[dict]:
     """
     セッションの対話履歴を取得
-    
+
     Returns:
         [{"role": "user"|"assistant", "content": "..."}]
     """
     messages = db.query(ChatMessage).filter(
         ChatMessage.session_id == session_id
     ).order_by(ChatMessage.created_at).all()
-    
+
+    # 空のコンテンツを除外してフィルタリング
     return [
         {"role": msg.role, "content": msg.content}
         for msg in messages
+        if msg.content and msg.content.strip()
     ]
 
 
